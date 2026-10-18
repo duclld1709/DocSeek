@@ -1,0 +1,52 @@
+# Local services for DocSeek. `docker compose up -d`, then `uv run docseek doctor`.
+# Ports bind to 127.0.0.1 only. NEO4J_PASSWORD is read from .env (min. 8 characters).
+name: docseek
+
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.19.2
+    ports:
+      - "127.0.0.1:6333:6333" # REST
+      - "127.0.0.1:6334:6334" # gRPC
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    healthcheck:
+      # The image ships without curl/wget, so probe /readyz over bash's /dev/tcp.
+      test:
+        - CMD-SHELL
+        - >-
+          bash -c 'exec 3<>/dev/tcp/127.0.0.1/6333 &&
+          printf "GET /readyz HTTP/1.0\r\n\r\n" >&3 &&
+          head -n1 <&3 | grep -q " 200"'
+      interval: 5s
+      timeout: 5s
+      start_period: 10s
+      retries: 12
+    restart: unless-stopped
+
+  neo4j:
+    image: neo4j:5.26-community
+    ports:
+      - "127.0.0.1:7474:7474" # HTTP browser
+      - "127.0.0.1:7687:7687" # Bolt
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-change-me}
+      NEO4J_server_memory_heap_initial__size: 512m
+      NEO4J_server_memory_heap_max__size: 1g
+      NEO4J_server_memory_pagecache_size: 512m
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    healthcheck:
+      # Checks Bolt end to end with the configured credentials.
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p \"$${NEO4J_AUTH#neo4j/}\" 'RETURN 1' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      start_period: 30s
+      retries: 12
+    restart: unless-stopped
+
+volumes:
+  qdrant_storage:
+  neo4j_data:
+  neo4j_logs:

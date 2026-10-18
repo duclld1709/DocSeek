@@ -35,7 +35,7 @@ def _clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_settings_defaults_without_env() -> None:
     settings = Settings(_env_file=None)  # type: ignore[call-arg]
 
-    assert settings.qdrant_url == "http://localhost:6333"
+    assert settings.qdrant_url == "http://127.0.0.1:6333"
     assert settings.budget_usd == 5.0
     assert settings.llm_cache_path == Path(".cache/llm.sqlite")
     assert settings.api_key_status() == {"GEMINI_API_KEY": False, "OPENAI_API_KEY": False}

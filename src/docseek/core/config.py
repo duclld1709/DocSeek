@@ -28,8 +28,10 @@ class Settings(BaseSettings):
 
     gemini_api_key: SecretStr | None = None
     openai_api_key: SecretStr | None = None
-    qdrant_url: str = "http://localhost:6333"
-    neo4j_uri: str = "bolt://localhost:7687"
+    # 127.0.0.1, not localhost: on Windows localhost tries ::1 first and docker-compose binds
+    # IPv4 only, which adds ~2 s to every new connection.
+    qdrant_url: str = "http://127.0.0.1:6333"
+    neo4j_uri: str = "bolt://127.0.0.1:7687"
     neo4j_user: str = "neo4j"
     neo4j_password: SecretStr = SecretStr("change-me")
     llm_cache_path: Path = Field(default=Path(".cache/llm.sqlite"), alias="DOCSEEK_LLM_CACHE")
