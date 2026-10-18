@@ -124,7 +124,114 @@ def _dense(
     return build_dense(cfg.model_dump(exclude={"type"}), chunks, policy)
 
 
-# Later milestones register hybrid... here.
+def _child(
+    raw: Any, chunks: list[Chunk], golden: list[GoldenQuery], policy: AccessPolicy, seed: int
+) -> Retriever:
+    cfg = RetrieverConfig.model_validate(raw)
+    try:
+        factory = RETRIEVERS[cfg.type]
+    except KeyError:
+        raise ValueError(f"unknown retriever type {cfg.type!r}") from None
+    return factory(cfg, chunks, golden, policy, seed)
+
+
+def _hybrid(
+    cfg: RetrieverConfig,
+    chunks: list[Chunk],
+    golden: list[GoldenQuery],
+    policy: AccessPolicy,
+    seed: int,
+) -> Retriever:
+    from docseek.hybrid.fusion import HybridRetriever
+
+    opts = cfg.model_dump(exclude={"type"})
+    children = {
+        label: _child(raw, chunks, golden, policy, seed)
+        for label, raw in dict(opts["children"]).items()
+    }
+    method = str(opts.get("method", "rrf"))
+    tag = f"rrf{opts.get('rrf_k', 60)}" if method == "rrf" else f"w{opts.get('norm', 'minmax')}"
+    return HybridRetriever(
+        f"hybrid-{tag}-" + "+".join(children),
+        children,
+        method=method,
+        depth=int(opts.get("depth", 50)),
+        rrf_k=float(opts.get("rrf_k", 60)),
+        weights=opts.get("weights"),
+        norm=str(opts.get("norm", "minmax")),
+    )
+
+
+def _rerank(
+    cfg: RetrieverConfig,
+    chunks: list[Chunk],
+    golden: list[GoldenQuery],
+    policy: AccessPolicy,
+    seed: int,
+) -> Retriever:
+    from docseek.core.config import load_models_config
+    from docseek.rerank.cross_encoder import (
+        CrossEncoderReranker,
+        RerankedRetriever,
+        rerank_texts,
+    )
+
+    opts = cfg.model_dump(exclude={"type"})
+    first = _child(opts["first_stage"], chunks, golden, policy, seed)
+    model = str(opts.get("model") or load_models_config().reranker.default)
+    cache = opts.get("cache_path", "data/index/rerank_scores.sqlite")
+    max_chars = opts.get("max_chars")
+    reranker = CrossEncoderReranker(
+        model,
+        cache_path=Path(cache) if cache else None,
+        max_chars=int(max_chars) if max_chars else None,
+    )
+    top_n = int(opts.get("top_n", 50))
+    return RerankedRetriever(
+        f"{first.name}+{reranker.name}@{top_n}",
+        first,
+        reranker,
+        rerank_texts(chunks),
+        top_n=top_n,
+    )
+
+
+def _qdrant_hybrid(
+    cfg: RetrieverConfig,
+    chunks: list[Chunk],
+    _g: list[GoldenQuery],
+    policy: AccessPolicy,
+    _seed: int,
+) -> Retriever:
+    from docseek.core.config import Settings
+    from docseek.dense.qdrant_store import connect
+    from docseek.dense.retriever import corpus_digest, make_embedder
+    from docseek.hybrid.qdrant_native import QdrantHybridRetriever, collection_name
+    from docseek.lexical.tokenizer import TokenizerConfig
+
+    opts = cfg.model_dump(exclude={"type"})
+    model = str(opts["model"])
+    cache = opts.get("cache_dir", "data/index/emb")
+    emb = make_embedder(model, Path(cache) if cache else None)
+    k1, b = float(opts.get("k1", 1.2)), float(opts.get("b", 0.75))
+    tok = TokenizerConfig(**dict(opts.get("tokenizer") or {}))
+    fusion = str(opts.get("fusion", "rrf"))
+    rrf_k = opts.get("rrf_k")
+    retriever = QdrantHybridRetriever(
+        f"qdrant-{fusion}-{model.split('/')[-1]}",
+        connect(str(opts.get("location") or Settings().qdrant_url)),
+        collection_name("hybrid", emb.name, corpus_digest(chunks, emb.name), f"{k1}-{b}", str(tok)),
+        emb,
+        policy,
+        tokenizer=tok,
+        fusion=fusion,
+        depth=int(opts.get("depth", 50)),
+        rrf_k=int(rrf_k) if rrf_k else None,
+    )
+    retriever.build(chunks, k1=k1, b=b)
+    return retriever
+
+
 RETRIEVERS: dict[str, RetrieverFactory] = {
     "random": _random,
     "oracle": _oracle,
@@ -132,6 +239,9 @@ RETRIEVERS: dict[str, RetrieverFactory] = {
     "tfidf": _lexical("tfidf"),
     "bm25s": _lexical("bm25s"),
     "dense": _dense,
+    "hybrid": _hybrid,
+    "rerank": _rerank,
+    "qdrant_hybrid": _qdrant_hybrid,
 }
 
 
