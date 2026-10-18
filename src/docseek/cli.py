@@ -321,3 +321,90 @@ def eval_compare(
         for qid, qtype, d in reversed(swings[-top:]):
             if d > 0:
                 console.print(f"  {qid} ({qtype}) {d:+.4f}")
+
+
+@eval_app.command("synth")
+def eval_synth(
+    out: Annotated[Path, typer.Option(help="Draft golden set to write.")] = Path(
+        "data/golden/golden_v1.draft.jsonl"
+    ),
+    scale: Annotated[
+        float, typer.Option(min=0.01, max=1.0, help="Multiply targets (e.g. 0.1 for a preview).")
+    ] = 1.0,
+) -> None:
+    """Generate synthetic golden queries (draft, unreviewed) from data/processed/."""
+    import yaml
+
+    from docseek.core.config import load_ingest_config
+    from docseek.core.models import Section
+    from docseek.core.runs import environment_info, make_run_dir, write_json
+    from docseek.core.tracing import JsonlTraceSink, Tracer, read_traces, summarize_llm_costs
+    from docseek.data.gen_internal import load_plan
+    from docseek.dense.embedders import FastEmbedEmbedder
+    from docseek.eval.golden import write_golden
+    from docseek.eval.judge import RelevanceJudge
+    from docseek.eval.synth import SynthConfig, SynthContext, synthesize
+    from docseek.ingest.pipeline import read_jsonl
+    from docseek.llm.client import build_llm_client
+
+    settings = Settings()
+    models = load_models_config(settings.configs_dir)
+    sections_path = load_ingest_config(settings.configs_dir).output_dir / "sections.jsonl"
+    if not sections_path.is_file():
+        console.print(f"[red]missing {sections_path}[/red]; run `docseek ingest` first")
+        raise typer.Exit(code=1)
+    sections = read_jsonl(sections_path, Section)
+    if not any(s.source == "internal-kb" for s in sections):
+        console.print("[red]no internal KB sections[/red]; run `docseek data gen-internal`")
+        raise typer.Exit(code=1)
+    with (settings.configs_dir / "synth.yaml").open(encoding="utf-8") as fh:
+        cfg = SynthConfig.model_validate(yaml.safe_load(fh))
+    if scale < 1.0:
+        cfg = cfg.model_copy(
+            update={"targets": {k: max(1, round(v * scale)) for k, v in cfg.targets.items()}}
+        )
+    run_dir = make_run_dir(settings.experiments_dir, "synth")
+    traces = run_dir / "traces.jsonl"
+    llm = build_llm_client(settings, Tracer(JsonlTraceSink(traces)))
+    ctx = SynthContext(
+        sections=sections,
+        plan=load_plan(settings.configs_dir / "internal_kb_plan.yaml"),
+        principals=load_principals(settings.configs_dir),
+        llm=llm,
+        generator=models.llm.generator,
+        judge=RelevanceJudge(llm, models.llm.judge),
+        embedder=FastEmbedEmbedder(models.embedding.default),
+        cfg=cfg,
+    )
+    result = synthesize(ctx)
+    write_golden(out, result.queries)
+    cost = summarize_llm_costs(read_traces(traces) if traces.exists() else [])
+    report = {
+        **result.report,
+        "config": cfg.model_dump(mode="json"),
+        "generator": models.llm.generator.model,
+        "judge": models.llm.judge.model,
+        "judge_rubric_version": ctx.judge.version,
+        "embedder": ctx.embedder.name,
+        "cost": cost.__dict__,
+        "run_dir": run_dir.as_posix(),
+    }
+    write_json(run_dir / "report.json", report)
+    write_json(out.with_suffix(".report.json"), report)
+    write_json(run_dir / "env.json", environment_info(command="eval synth", seed=cfg.seed))
+    table = Table(title=f"eval synth -> {out}")
+    for col in ("qtype", "generated", "dup", "not answerable", "kept rows"):
+        table.add_column(col)
+    for qtype, row in report["per_qtype"].items():
+        table.add_row(
+            qtype,
+            str(row.get("generated", "")),
+            str(row.get("dropped_duplicate", "")),
+            str(row.get("dropped_not_answerable", "")),
+            str(row.get("kept_rows", "")),
+        )
+    console.print(table)
+    console.print(
+        f"{len(result.queries)} queries; LLM calls {cost.llm_calls} ({cost.cached_calls} cached), "
+        f"spent ${cost.cost_usd:.4f} -> {run_dir}"
+    )

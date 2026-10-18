@@ -1,0 +1,22 @@
+# Synthetic query generation for golden_v1 (`docseek eval synth`, PROJECT_SPEC §5.2).
+# scan and image queries wait for Corpus C/D (M7), so v1 targets ~215 queries, not ~250.
+seed: 13
+targets:
+  factoid: 35
+  howto: 45
+  conceptual: 30
+  symbol: 30
+  multihop: 20
+  freshness: 15
+  permission: 15   # rows; each base query yields a privileged and an unprivileged row
+  unanswerable: 25
+# Generate this many times the target before filtering (dedup, answerability, balance).
+oversample: 1.5
+# Sections with fewer prose words (outside code fences) are not used as sources.
+min_prose_words: 40
+max_section_chars: 4000
+# Queries with cosine similarity above this to an earlier kept query are dropped.
+dedup_threshold: 0.92
+# Hard negatives: nearest sections by embedding (other pages), kept if the judge says 0.
+hard_negative_candidates: 3
+workers: 4
