@@ -1,0 +1,15 @@
+# Hand-written golden queries (origin: human). Target: ~30, spread over qtypes.
+# Find section ids with:  uv run docseek eval find-sections "background tasks"
+# Grades: 2 = answers directly, 1 = related/partial. Relevant sections must be readable by
+# the principal (anonymous: public; engineer: + eng-internal; security: + security-team).
+# unanswerable / permission-denied rows have `relevant: {}`.
+# Then: uv run docseek eval build-golden
+#
+# Example (remove the leading "# " to use it):
+# - text: "run code after returning the response"
+#   qtype: howto
+#   principal: anonymous
+#   relevant:
+#     "fastapi-docs:tutorial/background-tasks.md#background-tasks": 2
+#   notes: "written by hand"
+queries: []
