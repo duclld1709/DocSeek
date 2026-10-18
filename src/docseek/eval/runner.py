@@ -96,8 +96,30 @@ def _oracle(
     return OracleRetriever({q.qid: q.relevant for q in golden}, chunks, policy)
 
 
-# Later milestones register bm25, dense, hybrid... here.
-RETRIEVERS: dict[str, RetrieverFactory] = {"random": _random, "oracle": _oracle}
+def _lexical(kind: str) -> RetrieverFactory:
+    def factory(
+        cfg: RetrieverConfig,
+        chunks: list[Chunk],
+        _g: list[GoldenQuery],
+        policy: AccessPolicy,
+        _seed: int,
+    ) -> Retriever:
+        from docseek.lexical import factory as lex
+
+        builder = {"bm25": lex.build_bm25, "tfidf": lex.build_tfidf, "bm25s": lex.build_bm25s}
+        return builder[kind](cfg.model_dump(exclude={"type"}), chunks, policy)
+
+    return factory
+
+
+# Later milestones register dense, hybrid... here.
+RETRIEVERS: dict[str, RetrieverFactory] = {
+    "random": _random,
+    "oracle": _oracle,
+    "bm25": _lexical("bm25"),
+    "tfidf": _lexical("tfidf"),
+    "bm25s": _lexical("bm25s"),
+}
 
 
 def build_retriever(

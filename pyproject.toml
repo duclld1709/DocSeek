@@ -7,10 +7,12 @@ authors = [
 ]
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "bm25s>=0.3.13",
     "fastembed>=0.9.0",
     "litellm>=1.106.0",
     "neo4j>=6.4.1",
     "numpy>=2.5.4",
+    "py-rust-stemmers>=0.1.8",
     "pydantic>=2.14.1",
     "pydantic-settings>=2.16.0",
     "pyyaml>=6.0.3",
@@ -73,6 +75,7 @@ skip_covered = false
 [dependency-groups]
 dev = [
     "hypothesis>=6.170.1",
+    "matplotlib>=3.11.2",
     "mypy>=2.4.0",
     "pre-commit>=4.7.0",
     "pytest>=9.1.1",
@@ -81,3 +84,7 @@ dev = [
     "ruff>=0.17.1",
     "types-pyyaml>=6.0.12.20260906",
 ]
+
+[[tool.mypy.overrides]]
+module = ["py_rust_stemmers", "bm25s", "bm25s.*"]
+ignore_missing_imports = true
