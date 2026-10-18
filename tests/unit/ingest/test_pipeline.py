@@ -9,44 +9,19 @@ import yaml
 from typer.testing import CliRunner
 
 from docseek.cli import app
-from docseek.core.config import CorpusConfig, load_corpus_config, load_principals
 from docseek.core.models import Chunk, Section
-from docseek.ingest.chunking import ChunkingConfig
 from docseek.ingest.includes import find_unresolved_includes
-from docseek.ingest.pipeline import (
-    IngestResult,
-    corpus_stats,
-    read_jsonl,
-    resolve_links,
-    run_pipeline,
-)
+from docseek.ingest.pipeline import IngestResult, corpus_stats, read_jsonl, resolve_links
 from docseek.ingest.tokens import RegexTokenCounter
+from docseek.testing.fixtures import FIXTURES, REPO_ROOT, mini_ingest
 
-REPO = Path(__file__).resolve().parents[3]
-FIXTURES = REPO / "tests" / "fixtures"
+REPO = REPO_ROOT
 COUNTER = RegexTokenCounter()
-
-
-def _corpus(kb_dir: Path = FIXTURES / "mini_kb") -> CorpusConfig:
-    base = load_corpus_config(REPO / "configs")
-    return base.model_copy(
-        update={
-            "fastapi": base.fastapi.model_copy(update={"dest": FIXTURES / "mini_corpus"}),
-            "internal_kb": base.internal_kb.model_copy(update={"dir": kb_dir}),
-        }
-    )
 
 
 @pytest.fixture(scope="module")
 def result() -> IngestResult:
-    return run_pipeline(
-        _corpus(),
-        load_principals(REPO / "configs"),
-        COUNTER,
-        ChunkingConfig(),
-        repo_root=REPO,
-        use_git_dates=False,
-    )
+    return mini_ingest()
 
 
 def test_both_corpora_are_ingested_without_excluded_pages(result: IngestResult) -> None:
