@@ -439,6 +439,83 @@ def eval_compare(
                 console.print(f"  {qid} ({qtype}) {d:+.4f}")
 
 
+@eval_app.command("pool")
+def eval_pool(
+    runs: Annotated[list[Path], typer.Argument(help="Run directories to pool from.")],
+    depth: Annotated[int, typer.Option(help="Top sections per run and query.")] = 10,
+    golden: Annotated[Path, typer.Option()] = Path("data/golden/golden_v1.jsonl"),
+    out: Annotated[Path, typer.Option()] = Path("data/golden/golden_v2.jsonl"),
+    judgments: Annotated[Path, typer.Option()] = Path("data/golden/pool_judgments_v2.jsonl"),
+    cost_per_pair: Annotated[
+        float, typer.Option(help="Estimate for the dry run (M1 judge average).")
+    ] = 0.000148,
+    execute: Annotated[bool, typer.Option(help="Call the judge (default: dry run).")] = False,
+) -> None:
+    """Golden v2 by pooling (§5.3): judge unlabelled pooled pairs, merge into v1 labels."""
+    from docseek.core.models import Section
+    from docseek.core.runs import environment_info, make_run_dir, write_json
+    from docseek.core.tracing import JsonlTraceSink, Tracer, read_traces, summarize_llm_costs
+    from docseek.eval.golden import GoldenQuery, load_golden, write_golden
+    from docseek.eval.judge import RelevanceJudge
+    from docseek.eval.pooling import (
+        PoolJudgment,
+        build_v2,
+        pool_sections,
+        read_judgments,
+        unlabelled_pairs,
+        write_judgments,
+    )
+    from docseek.eval.synth import parallel_map
+    from docseek.ingest.pipeline import read_jsonl
+    from docseek.llm.client import build_llm_client
+
+    settings = Settings()
+    gold = load_golden(golden)
+    pairs = unlabelled_pairs(gold, pool_sections(runs, depth))
+    done = read_judgments(judgments)
+    todo = [p for p in pairs if (p[0].qid, p[1]) not in done]
+    console.print(
+        f"{len(pairs)} unlabelled pooled pairs, {len(todo)} not yet judged; "
+        f"estimated cost ${len(todo) * cost_per_pair:.3f}"
+    )
+    if not execute:
+        console.print("dry run; pass --execute to call the judge")
+        return
+    sections = {s.section_id: s for s in read_jsonl(Path("data/processed/sections.jsonl"), Section)}
+    run_dir = make_run_dir(settings.experiments_dir, "pool_v2")
+    traces = run_dir / "traces.jsonl"
+    llm = build_llm_client(settings, Tracer(JsonlTraceSink(traces)))
+    judge = RelevanceJudge(llm, load_models_config(settings.configs_dir).llm.judge)
+
+    def one(pair: tuple[GoldenQuery, str, list[str]]) -> PoolJudgment:
+        q, sid, pooled = pair
+        j = judge.judge(q.text, sections[sid])
+        return PoolJudgment(q.qid, sid, j.score, j.reason, j.model, j.rubric_version, pooled)
+
+    new = parallel_map(one, todo, 4)
+    merged = {**done, **{(j.qid, j.section_id): j for j in new}}
+    ordered = [merged[(q.qid, sid)] for q, sid, _ in pairs]
+    write_judgments(judgments, ordered)
+    v2 = build_v2(gold, ordered)
+    write_golden(out, v2)
+    cost = summarize_llm_costs(read_traces(traces) if traces.exists() else [])
+    n_added = sum(len(b.relevant) - len(a.relevant) for a, b in zip(gold, v2, strict=True))
+    report = {
+        "runs": [r.as_posix() for r in runs],
+        "depth": depth,
+        "pairs": len(pairs),
+        "judged_now": len(new),
+        "grade_counts": {g: sum(1 for j in ordered if j.score == g) for g in (0, 1, 2)},
+        "labels_added": n_added,
+        "queries_changed": sum(1 for a, b in zip(gold, v2, strict=True) if a != b),
+        "cost": cost.__dict__,
+    }
+    write_json(run_dir / "report.json", report)
+    write_json(run_dir / "env.json", environment_info(command="eval pool", **report))
+    console.print(report)
+    console.print(f"-> {out}, {judgments}, {run_dir}")
+
+
 @eval_app.command("synth")
 def eval_synth(
     out: Annotated[Path, typer.Option(help="Draft golden set to write.")] = Path(
