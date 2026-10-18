@@ -1,0 +1,62 @@
+API error codes
+This document deﬁnes the standardized error
+codes for all public-facing endpoints maintained
+by the api-platform-team. These codes provide
+granular feedback for integration debugging,
+ensuring that client implementations can
+programmatically handle failure states. When
+returning these errors, the response body must
+include the string-based code and a descriptive
+message.
+Error mappings
+The following table outlines the current error
+registry. Developers should map these codes to
+their respective HTTP status codes to ensure
+standard behavior in client-side error handling.
+Code
+HTTP
+status
+Meaning
+ACME-4001
+402
+Card declined by
+issuer
+ACME-4290
+429
+Merchant exceeded
+rate limit
+ACME-5030
+503
+Card processor
+unavailable
+ACME-4002
+400
+Invalid request
+payload
+ACME-4010
+401
+Authentication failed
+ACME-4030
+403
+Insuﬃcient
+permissions
+ACME-4040
+404
+Resource not found
+ACME-5000
+500
+Internal server error
+Implementation guidelines
+All FastAPI routes must use the standard
+exception handler provided by the api-platform-
+team library. Do not manually construct error
+responses using raw dictionaries, as this
+bypasses the global logging and telemetry
+hooks. When encountering an ACME-4290,
+clients are expected to respect the Retry-After
+header. For ACME-5030 errors, implement
+exponential backoﬀ to avoid hammering the
+processor gateway during recovery cycles. If a
+new error condition arises, consult with the api-
+platform-team before introducing custom codes
+to maintain consistency across the ecosystem.

@@ -1,0 +1,36 @@
+OpenTelemetry
+When your API is running, you might want to know how much traﬃc it receives, which requests are slow,
+and when errors happen.
+Telemetry is data about your application's behavior that helps you answer these questions. Common types
+include:
+•  Metrics: measurements you can summarize over time, such as response times and the number of
+requests being handled.
+•  Traces: records of individual requests and the operations performed to handle them. Each timed
+operation is called a span.
+•  Logs: timestamped records of events, such as an application starting or an operation failing.
+OpenTelemetry is a set of standards and tools for collecting telemetry and sending it to a monitoring
+service, where you can explore it in dashboards.
+FastAPI provides OpenTelemetry support by default for HTTP request traces, metrics, and logs.
+WebSocket connections also provide traces and logs. To see that data, conﬁgure a monitoring service to
+receive it.
+Install FastAPI
+Install FastAPI with the standard extras, which include the packages for sending telemetry:
+$ uv add "fastapi[standard]"
+---> 100%
+Create the app
+Create a ﬁle main.py:
+from fastapi import FastAPI
+app = FastAPI()
+@app.get("/items/{item_id}")
+async def read_item(item_id: int):
+    return {"item_id": item_id}
+You don't need to write any custom code to collect telemetry.
+FastAPI Cloud
+When you deploy to FastAPI Cloud with fastapi[standard], metrics work automatically. You don't have to
+conﬁgure anything else.
+On Pro plans, you can view request counts, error rates, and response times in the Metrics dashboard.
+[image: FastAPI Cloud Pro metrics dashboard with example data]
+Other monitoring services
+To send telemetry to another monitoring service, conﬁgure an endpoint that accepts OTLP, the
+OpenTelemetry protocol for sending telemetry. Use the service's HTTP/protobuf base endpoint.
+Set these environment variables, replacing the example URL with your endpoint:

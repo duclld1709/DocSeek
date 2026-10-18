@@ -1,0 +1,37 @@
+OpenAPI Callbacks
+You could create an API with a path operation that could trigger a request to an external API created by
+someone else (probably the same developer that would be using your API).
+The process that happens when your API app calls the external API is named a "callback". Because the
+software that the external developer wrote sends a request to your API and then your API calls back,
+sending a request to an external API (that was probably created by the same developer).
+In this case, you could want to document how that external API should look. What path operation it should
+have, what body it should expect, what response it should return, etc.
+An app with callbacks
+Let's see all this with an example.
+Imagine you develop an app that allows creating invoices.
+These invoices will have an id, title (optional), customer, and total.
+The user of your API (an external developer) will create an invoice in your API with a POST request.
+Then your API will (let's imagine):
+•  Send the invoice to some customer of the external developer.
+•  Collect the money.
+•  Send a notiﬁcation back to the API user (the external developer).
+○  This will be done by sending a POST request (from your API) to some external API provided
+by that external developer (this is the "callback").
+The normal FastAPI app
+Let's ﬁrst see how the normal API app would look before adding the callback.
+It will have a path operation that will receive an Invoice body, and a query parameter callback_url that
+will contain the URL for the callback.
+This part is pretty normal, most of the code is probably already familiar to you:
+from fastapi import APIRouter, FastAPI
+from pydantic import BaseModel, HttpUrl
+app = FastAPI()
+class Invoice(BaseModel):
+    id: str
+    title: str | None = None
+    customer: str
+    total: float
+class InvoiceEvent(BaseModel):
+    description: str
+    paid: bool
+class InvoiceEventReceived(BaseModel):
+    ok: bool

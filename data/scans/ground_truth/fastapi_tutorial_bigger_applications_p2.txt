@@ -1,0 +1,78 @@
+way you would with the class FastAPI:
+File: app/routers/users.py
+from fastapi import APIRouter
+router = APIRouter()
+@router.get("/users/", tags=["users"])
+async def read_users():
+    return [{"username": "Rick"},
+{"username": "Morty"}]
+@router.get("/users/me", tags=["users"])
+async def read_user_me():
+    return {"username": "fakecurrentuser"}
+@router.get("/users/{username}",
+tags=["users"])
+async def read_user(username: str):
+    return {"username": username}
+Path operations with APIRouter
+And then you use it to declare your path
+operations.
+Use it the same way you would use the FastAPI
+class:
+File: app/routers/users.py
+from fastapi import APIRouter
+router = APIRouter()
+@router.get("/users/", tags=["users"])
+async def read_users():
+    return [{"username": "Rick"},
+{"username": "Morty"}]
+@router.get("/users/me", tags=["users"])
+async def read_user_me():
+    return {"username": "fakecurrentuser"}
+@router.get("/users/{username}",
+tags=["users"])
+async def read_user(username: str):
+    return {"username": username}
+You can think of APIRouter as a "mini FastAPI"
+class.
+All the same options are supported.
+All the same parameters, responses,
+dependencies, tags, etc.
+Tip:
+In this example, the variable is called router, but
+you can name it however you want.
+We are going to include this APIRouter in the
+main FastAPI app, but ﬁrst, let's check the
+dependencies and another APIRouter.
+Dependencies
+We see that we are going to need some
+dependencies used in several places of the
+application.
+So we put them in their own dependencies
+module (app/dependencies.py).
+We will now use a simple dependency to read a
+custom X-Token header:
+File: app/dependencies.py
+from typing import Annotated
+from fastapi import Header, HTTPException
+async def get_token_header(x_token:
+Annotated[str, Header()]):
+    if x_token != "fake-super-secret-
+token":
+        raise
+HTTPException(status_code=400, detail="X-
+Token header invalid")
+async def get_query_token(token: str):
+    if token != "jessica":
+        raise
+HTTPException(status_code=400, detail="No
+Jessica token provided")
+Tip:
+We are using an invented header to simplify this
+example.
+But in real cases you will get better results using
+the integrated Security utilities.
+Another module with APIRouter
+Let's say you also have the endpoints dedicated
+to handling "items" from your application in the
+module at app/routers/items.py.
+You have path operations for:

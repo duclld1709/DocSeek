@@ -1,0 +1,34 @@
+Public API rate limits
+Overview
+This document outlines the legacy rate limiting
+policy for the Acme Payments public API. The
+api-platform-team maintains this speciﬁcation for
+historical reference. This status is deprecated, as
+these limits have been superseded by our
+updated infrastructure. All integrations currently
+adhering to these constraints should migrate to
+the latest version of our API gateway to ensure
+service continuity.
+Rate limiting policy
+The legacy rate limiting policy enforces a strict
+threshold on all incoming traﬃc per merchant
+identiﬁer. Each merchant may send 100 requests
+per minute to the public API. This quota is
+calculated on a rolling window basis. When a
+merchant exceeds this limit, the API gateway will
+immediately terminate the connection and return
+an HTTP 429 Too Many Requests status code.
+Error handling
+Clients receiving an HTTP 429 response must
+implement standard backoﬀ strategies to
+maintain system stability. Every 429 response
+includes a Retry-After header, which speciﬁes
+the number of seconds the client must wait
+before attempting subsequent requests. We
+strongly advise against aggressive retry loops,
+as these will trigger additional rate limiting and
+may result in temporary blacklisting of the
+originating IP address. Developers should
+ensure their client-side logic reads the Retry-
+After header dynamically rather than relying on
+hardcoded sleep intervals.

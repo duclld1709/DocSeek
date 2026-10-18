@@ -1,0 +1,5 @@
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+Then if you go to the URLs at /openapi.json, /docs, or /redoc you will just get a 404 Not Found error like:
+{
+    "detail": "Not Found"
+}

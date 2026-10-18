@@ -1,0 +1,44 @@
+@app.get("/items/", response_class=HTMLResponse)
+async def read_items():
+    return """
+    <html>
+        <head>
+            <title>Some HTML in here</title>
+        </head>
+        <body>
+            <h1>Look ma! HTML!</h1>
+        </body>
+    </html>
+    """
+Note:
+The parameter response_class will also be used to deﬁne the "media type" of the response.
+In this case, the HTTP header Content-Type will be set to text/html.
+And it will be documented as such in OpenAPI.
+Return a Response
+As seen in Return a Response directly, you can also override the response directly in your path operation,
+by returning it.
+The same example from above, returning an HTMLResponse, could look like:
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+app = FastAPI()
+@app.get("/items/")
+async def read_items():
+    html_content = """
+    <html>
+        <head>
+            <title>Some HTML in here</title>
+        </head>
+        <body>
+            <h1>Look ma! HTML!</h1>
+        </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content, status_code=200)
+Warning:
+A Response returned directly by your path operation function won't be documented in OpenAPI (for
+example, the Content-Type won't be documented) and won't be visible in the automatic interactive docs.
+Note:
+Of course, the actual Content-Type header, status code, etc, will come from the Response object you
+returned.
+Document in OpenAPI and override Response
+If you want to override the response from inside of the function but at the same time document the "media

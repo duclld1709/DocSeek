@@ -1,0 +1,38 @@
+Dependencies with yield
+FastAPI supports dependencies that do some extra steps after ﬁnishing.
+To do this, use yield instead of return, and write the extra steps (code) after.
+Tip:
+Make sure to use yield one single time per dependency.
+Note: Technical Details
+Any function that is valid to use with:
+•  @contextlib.contextmanager or
+•  @contextlib.asynccontextmanager
+would be valid to use as a FastAPI dependency.
+In fact, FastAPI uses those two decorators internally.
+A database dependency with yield
+For example, you could use this to create a database session and close it after ﬁnishing.
+Only the code prior to and including the yield statement is executed before creating a response:
+async def get_db():
+    db = DBSession()
+    try:
+        yield db
+    finally:
+        db.close()
+The yielded value is what is injected into path operations and other dependencies:
+async def get_db():
+    db = DBSession()
+    try:
+        yield db
+    finally:
+        db.close()
+The code following the yield statement is executed after the response:
+async def get_db():
+    db = DBSession()
+    try:
+        yield db
+    finally:
+        db.close()
+Tip:
+You can use async or regular functions.
+FastAPI will do the right thing with each, the same as with normal dependencies.
+A dependency with yield and try

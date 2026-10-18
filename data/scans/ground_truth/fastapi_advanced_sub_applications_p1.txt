@@ -1,0 +1,31 @@
+Sub Applications - Mounts
+If you need to have two independent FastAPI applications, with their own independent OpenAPI and their
+own docs UIs, you can have a main app and "mount" one (or more) sub-application(s).
+Mounting a FastAPI application
+"Mounting" means adding a completely "independent" application in a speciﬁc path, that then takes care of
+handling everything under that path, with the path operations declared in that sub-application.
+Top-level application
+First, create the main, top-level, FastAPI application, and its path operations:
+from fastapi import FastAPI
+app = FastAPI()
+@app.get("/app")
+def read_main():
+    return {"message": "Hello World from main app"}
+subapi = FastAPI()
+@subapi.get("/sub")
+def read_sub():
+    return {"message": "Hello World from sub API"}
+app.mount("/subapi", subapi)
+Sub-application
+Then, create your sub-application, and its path operations.
+This sub-application is just another standard FastAPI application, but this is the one that will be "mounted":
+from fastapi import FastAPI
+app = FastAPI()
+@app.get("/app")
+def read_main():
+    return {"message": "Hello World from main app"}
+subapi = FastAPI()
+@subapi.get("/sub")
+def read_sub():
+    return {"message": "Hello World from sub API"}
+app.mount("/subapi", subapi)

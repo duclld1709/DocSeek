@@ -1,0 +1,46 @@
+[
+ {
+  "header": [
+   "Parameter",
+   "Type",
+   "Description"
+  ],
+  "rows": [
+   [
+    "`title`",
+    "`str`",
+    "The title of the API."
+   ],
+   [
+    "`summary`",
+    "`str`",
+    "A short summary of the API. Available since OpenAPI 3.1.0, FastAPI 0.99.0."
+   ],
+   [
+    "`description`",
+    "`str`",
+    "A short description of the API. It can use Markdown."
+   ],
+   [
+    "`version`",
+    "`str`",
+    "The version of the API. This is the version of your own application, not of OpenAPI. For example `2.5.0`."
+   ],
+   [
+    "`terms_of_service`",
+    "`str`",
+    "A URL to the Terms of Service for the API. If provided, this has to be a URL."
+   ],
+   [
+    "`contact`",
+    "`dict`",
+    "The contact information for the exposed API. It can contain several fields. contact fieldsParameterTypeDescriptionnamestrThe identifying name of the contact person/organization.urlstrThe URL pointing to the contact information. MUST be in the format of a URL.emailstrThe email address of the contact person/organization. MUST be in the format of an email address."
+   ],
+   [
+    "`license_info`",
+    "`dict`",
+    "The license information for the exposed API. It can contain several fields. license_info fieldsParameterTypeDescriptionnamestrREQUIRED (if a license_info is set). The license name used for the API.identifierstrAn SPDX license expression for the API. The identifier field is mutually exclusive of the url field. Available since OpenAPI 3.1.0, FastAPI 0.99.0.urlstrA URL to the license used for the API. MUST be in the format of a URL."
+   ]
+  ]
+ }
+]

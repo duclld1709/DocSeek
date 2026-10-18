@@ -1,0 +1,37 @@
+SLA by service
+Overview
+This document deﬁnes the service level agreements (SLAs) and latency targets for core infrastructure
+services managed by the sre-team. These metrics are used to monitor production health and dictate
+incident response priorities. All services are built using Python and FastAPI, and performance is measured
+at the load balancer egress.
+Service Level Objectives
+The payments API maintains a monthly uptime SLA of 99.95%. The payouts API maintains a monthly
+uptime SLA of 99.9%. For transaction processing, the p95 latency target for payment authorization is 400
+ms. Teams are expected to conﬁgure alerting thresholds to trigger if these metrics deviate for more than
+three consecutive minutes.
+Service
+Monthly uptime SLA
+p95 latency target
+Payments API
+99.95%
+400 ms
+Payouts API
+99.9%
+600 ms
+Ledger Service
+99.95%
+250 ms
+Auth Service
+99.99%
+150 ms
+Webhooks API
+99.9%
+800 ms
+KYC Service
+99.5%
+1200 ms
+Monitoring and Compliance
+All services must expose a standard /health endpoint compatible with our internal monitoring stack.
+Latency targets reﬂect server-side processing time excluding network transit jitter. Compliance is evaluated
+on a rolling 30-day window. Any service failing to meet these targets must have a documented remediation
+plan ﬁled in the engineering backlog within 48 hours of the breach.

@@ -1,0 +1,486 @@
+{
+ "dpi": 150,
+ "seed": 13,
+ "scans": [
+  {
+   "name": "fastapi_advanced_opentelemetry",
+   "doc_id": "fastapi-docs:advanced/opentelemetry.md",
+   "pages": 2,
+   "two_columns": false,
+   "acl": [
+    "public"
+   ],
+   "doc_type": "advanced",
+   "status": "active",
+   "version": null,
+   "supersedes": null,
+   "updated_at": "2026-10-08T13:51:39+02:00",
+   "title": "Advanced",
+   "n_tables": 1
+  },
+  {
+   "name": "fastapi_tutorial_metadata",
+   "doc_id": "fastapi-docs:tutorial/metadata.md",
+   "pages": 2,
+   "two_columns": false,
+   "acl": [
+    "public"
+   ],
+   "doc_type": "tutorial",
+   "status": "active",
+   "version": null,
+   "supersedes": null,
+   "updated_at": "2026-06-19T09:29:44+00:00",
+   "title": "Tutorial",
+   "n_tables": 1
+  },
+  {
+   "name": "fastapi_advanced_additional_responses",
+   "doc_id": "fastapi-docs:advanced/additional-responses.md",
+   "pages": 2,
+   "two_columns": true,
+   "acl": [
+    "public"
+   ],
+   "doc_type": "advanced",
+   "status": "active",
+   "version": null,
+   "supersedes": null,
+   "updated_at": "2026-07-24T20:29:32+00:00",
+   "title": "Advanced",
+   "n_tables": 0
+  },
+  {
+   "name": "fastapi_advanced_custom_response",
+   "doc_id": "fastapi-docs:advanced/custom-response.md",
+   "pages": 2,
+   "two_columns": false,
+   "acl": [
+    "public"
+   ],
+   "doc_type": "advanced",
+   "status": "active",
+   "version": null,
+   "supersedes": null,
+   "updated_at": "2026-05-18T13:55:19+02:00",
+   "title": "Advanced",
+   "n_tables": 0
+  },
+  {
+   "name": "fastapi_advanced_openapi_callbacks",
+   "doc_id": "fastapi-docs:advanced/openapi-callbacks.md",
+   "pages": 2,
+   "two_columns": false,
+   "acl": [
+    "public"
+   ],
+   "doc_type": "advanced",
+   "status": "active",
+   "version": null,
+   "supersedes": null,
+   "updated_at": "2026-07-24T20:29:32+00:00",
+   "title": "Advanced",
+   "n_tables": 0
+  },
+  {
+   "name": "fastapi_advanced_response_headers",
+   "doc_id": "fastapi-docs:advanced/response-headers.md",
+   "pages": 1,
+   "two_columns": true,
+   "acl": [
+    "public"
+   ],
+   "doc_type": "advanced",
+   "status": "active",
+   "version": null,
+   "supersedes": null,
+   "updated_at": "2026-07-24T20:29:32+00:00",
+   "title": "Advanced",
+   "n_tables": 0
+  },
+  {
+   "name": "fastapi_advanced_sub_applications",
+   "doc_id": "fastapi-docs:advanced/sub-applications.md",
+   "pages": 2,
+   "two_columns": false,
+   "acl": [
+    "public"
+   ],
+   "doc_type": "advanced",
+   "status": "active",
+   "version": null,
+   "supersedes": null,
+   "updated_at": "2026-07-21T21:27:36+00:00",
+   "title": "Advanced",
+   "n_tables": 0
+  },
+  {
+   "name": "fastapi_advanced_websockets",
+   "doc_id": "fastapi-docs:advanced/websockets.md",
+   "pages": 2,
+   "two_columns": false,
+   "acl": [
+    "public"
+   ],
+   "doc_type": "advanced",
+   "status": "active",
+   "version": null,
+   "supersedes": null,
+   "updated_at": "2026-07-24T20:29:32+00:00",
+   "title": "Advanced",
+   "n_tables": 0
+  },
+  {
+   "name": "fastapi_deployment_manually",
+   "doc_id": "fastapi-docs:deployment/manually.md",
+   "pages": 2,
+   "two_columns": true,
+   "acl": [
+    "public"
+   ],
+   "doc_type": "deployment",
+   "status": "active",
+   "version": null,
+   "supersedes": null,
+   "updated_at": "2026-07-24T20:29:32+00:00",
+   "title": "Deployment",
+   "n_tables": 0
+  },
+  {
+   "name": "fastapi_how_to_conditional_openapi",
+   "doc_id": "fastapi-docs:how-to/conditional-openapi.md",
+   "pages": 2,
+   "two_columns": false,
+   "acl": [
+    "public"
+   ],
+   "doc_type": "how-to",
+   "status": "active",
+   "version": null,
+   "supersedes": null,
+   "updated_at": "2026-03-05T19:13:19+01:00",
+   "title": "How To",
+   "n_tables": 0
+  },
+  {
+   "name": "fastapi_how_to_migrate_from_pydantic_v1_to_pydantic_v2",
+   "doc_id": "fastapi-docs:how-to/migrate-from-pydantic-v1-to-pydantic-v2.md",
+   "pages": 2,
+   "two_columns": false,
+   "acl": [
+    "public"
+   ],
+   "doc_type": "how-to",
+   "status": "active",
+   "version": null,
+   "supersedes": null,
+   "updated_at": "2026-07-24T20:29:32+00:00",
+   "title": "How To",
+   "n_tables": 0
+  },
+  {
+   "name": "fastapi_reference_dependencies",
+   "doc_id": "fastapi-docs:reference/dependencies.md",
+   "pages": 1,
+   "two_columns": true,
+   "acl": [
+    "public"
+   ],
+   "doc_type": "reference",
+   "status": "active",
+   "version": null,
+   "supersedes": null,
+   "updated_at": "2024-04-18T14:53:19-05:00",
+   "title": "Reference",
+   "n_tables": 0
+  },
+  {
+   "name": "fastapi_reference_request",
+   "doc_id": "fastapi-docs:reference/request.md",
+   "pages": 1,
+   "two_columns": false,
+   "acl": [
+    "public"
+   ],
+   "doc_type": "reference",
+   "status": "active",
+   "version": null,
+   "supersedes": null,
+   "updated_at": "2026-02-04T13:41:54+01:00",
+   "title": "Reference",
+   "n_tables": 0
+  },
+  {
+   "name": "fastapi_reference_status",
+   "doc_id": "fastapi-docs:reference/status.md",
+   "pages": 1,
+   "two_columns": false,
+   "acl": [
+    "public"
+   ],
+   "doc_type": "reference",
+   "status": "active",
+   "version": null,
+   "supersedes": null,
+   "updated_at": "2026-06-19T09:29:44+00:00",
+   "title": "Reference",
+   "n_tables": 0
+  },
+  {
+   "name": "fastapi_tutorial_bigger_applications",
+   "doc_id": "fastapi-docs:tutorial/bigger-applications.md",
+   "pages": 2,
+   "two_columns": true,
+   "acl": [
+    "public"
+   ],
+   "doc_type": "tutorial",
+   "status": "active",
+   "version": null,
+   "supersedes": null,
+   "updated_at": "2026-10-15T16:24:53+02:00",
+   "title": "Tutorial",
+   "n_tables": 0
+  },
+  {
+   "name": "fastapi_tutorial_cookie_param_models",
+   "doc_id": "fastapi-docs:tutorial/cookie-param-models.md",
+   "pages": 2,
+   "two_columns": false,
+   "acl": [
+    "public"
+   ],
+   "doc_type": "tutorial",
+   "status": "active",
+   "version": null,
+   "supersedes": null,
+   "updated_at": "2026-05-18T13:55:19+02:00",
+   "title": "Tutorial",
+   "n_tables": 0
+  },
+  {
+   "name": "fastapi_tutorial_dependencies_dependencies_with_yield",
+   "doc_id": "fastapi-docs:tutorial/dependencies/dependencies-with-yield.md",
+   "pages": 2,
+   "two_columns": false,
+   "acl": [
+    "public"
+   ],
+   "doc_type": "tutorial",
+   "status": "active",
+   "version": null,
+   "supersedes": null,
+   "updated_at": "2026-06-19T09:29:44+00:00",
+   "title": "Tutorial",
+   "n_tables": 0
+  },
+  {
+   "name": "fastapi_tutorial_extra_models",
+   "doc_id": "fastapi-docs:tutorial/extra-models.md",
+   "pages": 2,
+   "two_columns": true,
+   "acl": [
+    "public"
+   ],
+   "doc_type": "tutorial",
+   "status": "active",
+   "version": null,
+   "supersedes": null,
+   "updated_at": "2026-10-15T16:24:53+02:00",
+   "title": "Tutorial",
+   "n_tables": 0
+  },
+  {
+   "name": "fastapi_tutorial_index",
+   "doc_id": "fastapi-docs:tutorial/index.md",
+   "pages": 2,
+   "two_columns": false,
+   "acl": [
+    "public"
+   ],
+   "doc_type": "tutorial",
+   "status": "active",
+   "version": null,
+   "supersedes": null,
+   "updated_at": "2026-07-23T20:52:31+02:00",
+   "title": "Tutorial - User Guide",
+   "n_tables": 0
+  },
+  {
+   "name": "fastapi_tutorial_query_params_str_validations",
+   "doc_id": "fastapi-docs:tutorial/query-params-str-validations.md",
+   "pages": 2,
+   "two_columns": false,
+   "acl": [
+    "public"
+   ],
+   "doc_type": "tutorial",
+   "status": "active",
+   "version": null,
+   "supersedes": null,
+   "updated_at": "2026-07-24T20:29:32+00:00",
+   "title": "Tutorial",
+   "n_tables": 0
+  },
+  {
+   "name": "internal_kb_0023",
+   "doc_id": "internal-kb:kb-0023.md",
+   "pages": 1,
+   "two_columns": true,
+   "acl": [
+    "public"
+   ],
+   "doc_type": "api-convention",
+   "status": "active",
+   "version": 3,
+   "supersedes": null,
+   "updated_at": "2026-05-20T00:00:00+00:00",
+   "title": "API error codes",
+   "n_tables": 1
+  },
+  {
+   "name": "internal_kb_0024",
+   "doc_id": "internal-kb:kb-0024.md",
+   "pages": 1,
+   "two_columns": false,
+   "acl": [
+    "public"
+   ],
+   "doc_type": "api-convention",
+   "status": "active",
+   "version": 2,
+   "supersedes": null,
+   "updated_at": "2026-04-01T00:00:00+00:00",
+   "title": "SLA by service",
+   "n_tables": 1
+  },
+  {
+   "name": "internal_kb_0001",
+   "doc_id": "internal-kb:kb-0001.md",
+   "pages": 1,
+   "two_columns": false,
+   "acl": [
+    "eng-internal"
+   ],
+   "doc_type": "runbook",
+   "status": "deprecated",
+   "version": 1,
+   "supersedes": null,
+   "updated_at": "2025-09-12T00:00:00+00:00",
+   "title": "Card processor timeouts",
+   "n_tables": 0
+  },
+  {
+   "name": "internal_kb_0002",
+   "doc_id": "internal-kb:kb-0002.md",
+   "pages": 1,
+   "two_columns": true,
+   "acl": [
+    "eng-internal"
+   ],
+   "doc_type": "runbook",
+   "status": "active",
+   "version": 2,
+   "supersedes": "internal-kb:kb-0001.md",
+   "updated_at": "2026-08-02T00:00:00+00:00",
+   "title": "Card processor timeouts",
+   "n_tables": 0
+  },
+  {
+   "name": "internal_kb_0003",
+   "doc_id": "internal-kb:kb-0003.md",
+   "pages": 1,
+   "two_columns": false,
+   "acl": [
+    "security-team"
+   ],
+   "doc_type": "security-policy",
+   "status": "deprecated",
+   "version": 1,
+   "supersedes": null,
+   "updated_at": "2025-07-01T00:00:00+00:00",
+   "title": "Rotating JWT signing keys",
+   "n_tables": 0
+  },
+  {
+   "name": "internal_kb_0004",
+   "doc_id": "internal-kb:kb-0004.md",
+   "pages": 1,
+   "two_columns": false,
+   "acl": [
+    "security-team"
+   ],
+   "doc_type": "security-policy",
+   "status": "active",
+   "version": 3,
+   "supersedes": "internal-kb:kb-0003.md",
+   "updated_at": "2026-06-20T00:00:00+00:00",
+   "title": "Rotating JWT Signing Keys",
+   "n_tables": 0
+  },
+  {
+   "name": "internal_kb_0005",
+   "doc_id": "internal-kb:kb-0005.md",
+   "pages": 1,
+   "two_columns": true,
+   "acl": [
+    "public"
+   ],
+   "doc_type": "api-convention",
+   "status": "deprecated",
+   "version": 1,
+   "supersedes": null,
+   "updated_at": "2025-10-03T00:00:00+00:00",
+   "title": "Public API rate limits",
+   "n_tables": 0
+  },
+  {
+   "name": "internal_kb_0006",
+   "doc_id": "internal-kb:kb-0006.md",
+   "pages": 1,
+   "two_columns": false,
+   "acl": [
+    "public"
+   ],
+   "doc_type": "api-convention",
+   "status": "active",
+   "version": 2,
+   "supersedes": "internal-kb:kb-0005.md",
+   "updated_at": "2026-05-14T00:00:00+00:00",
+   "title": "Public API rate limits",
+   "n_tables": 0
+  },
+  {
+   "name": "internal_kb_0007",
+   "doc_id": "internal-kb:kb-0007.md",
+   "pages": 1,
+   "two_columns": false,
+   "acl": [
+    "eng-internal"
+   ],
+   "doc_type": "runbook",
+   "status": "deprecated",
+   "version": 1,
+   "supersedes": null,
+   "updated_at": "2025-08-20T00:00:00+00:00",
+   "title": "Ledger database connection pool sizing",
+   "n_tables": 0
+  },
+  {
+   "name": "internal_kb_0008",
+   "doc_id": "internal-kb:kb-0008.md",
+   "pages": 1,
+   "two_columns": true,
+   "acl": [
+    "eng-internal"
+   ],
+   "doc_type": "runbook",
+   "status": "active",
+   "version": 2,
+   "supersedes": "internal-kb:kb-0007.md",
+   "updated_at": "2026-04-09T00:00:00+00:00",
+   "title": "Ledger database connection pool sizing",
+   "n_tables": 0
+  }
+ ]
+}

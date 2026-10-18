@@ -1,0 +1,36 @@
+Conditional OpenAPI
+If you needed to, you could use settings and environment variables to conﬁgure OpenAPI conditionally
+depending on the environment, and even disable it entirely.
+About security, APIs, and docs
+Hiding your documentation user interfaces in production shouldn't be the way to protect your API.
+That doesn't add any extra security to your API, the path operations will still be available where they are.
+If there's a security ﬂaw in your code, it will still exist.
+Hiding the documentation just makes it more diﬃcult to understand how to interact with your API, and could
+make it more diﬃcult for you to debug it in production. It could be considered simply a form of Security
+through obscurity.
+If you want to secure your API, there are several better things you can do, for example:
+•  Make sure you have well deﬁned Pydantic models for your request bodies and responses.
+•  Conﬁgure any required permissions and roles using dependencies.
+•  Never store plaintext passwords, only password hashes.
+•  Implement and use well-known cryptographic tools, like pwdlib and JWT tokens, etc.
+•  Add more granular permission controls with OAuth2 scopes where needed.
+•  ...etc.
+Nevertheless, you might have a very speciﬁc use case where you really need to disable the API docs for
+some environment (e.g. for production) or depending on conﬁgurations from environment variables.
+Conditional OpenAPI from settings and env vars
+You can easily use the same Pydantic settings to conﬁgure your generated OpenAPI and the docs UIs.
+For example:
+from fastapi import FastAPI
+from pydantic_settings import BaseSettings
+class Settings(BaseSettings):
+    openapi_url: str = "/openapi.json"
+settings = Settings()
+app = FastAPI(openapi_url=settings.openapi_url)
+@app.get("/")
+def root():
+    return {"message": "Hello World"}
+Here we declare the setting openapi_url with the same default of "/openapi.json".
+And then we use it when creating the FastAPI app.
+Then you could disable OpenAPI (including the UI docs) by setting the environment variable OPENAPI_URL
+to the empty string, like:
+$ OPENAPI_URL= uvicorn main:app

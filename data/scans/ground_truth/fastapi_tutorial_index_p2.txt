@@ -1,0 +1,38 @@
+$ uv init awesome-project --bare
+$ cd awesome-project
+$ uv add "fastapi[standard]"
+---> 100%
+uv add creates the project's virtual environment in .venv, adds FastAPI to pyproject.toml, and creates
+uv.lock so the same package versions can be installed later.
+Details: What these commands do
+•  uv init: create a new Python project.
+•  awesome-project: create the project in a new directory with this name.
+•  --bare: create only the minimal pyproject.toml ﬁle, without generating a sample main.py,
+README.md, or other ﬁles. You will create the application ﬁles yourself in the next steps of this tutorial.
+Then cd awesome-project enters the new project directory before adding FastAPI.
+uv will use a compatible Python version already installed on your system, or download one if needed.
+When you run uv add, it selects compatible versions of FastAPI and all the packages FastAPI depends on.
+It records the exact versions in uv.lock, making it possible to install the same package versions later on
+another computer or when deploying the application.
+Creating or updating this ﬁle is called locking the project dependencies. uv does this automatically when
+you add a package.
+Details: FastAPI installation options
+When you install with uv add "fastapi[standard]" it comes with some default optional standard
+dependencies, including fastapi-cloud-cli, which allows you to deploy to FastAPI Cloud.
+If you don't want to have those optional dependencies, you can instead install uv add fastapi.
+If you want to install the standard dependencies but without the fastapi-cloud-cli, you can install with uv
+add "fastapi[standard-no-fastapi-cloud-cli]".
+Details: Using pip instead
+If you prefer to manage a virtual environment and packages manually, create and activate a virtual
+environment and then install FastAPI with pip install "fastapi[standard]".
+Read the Virtual Environments guide for the detailed steps.
+AI Agent Skills
+FastAPI includes an oﬃcial skill for AI coding agents. It is bundled with the package, so its guidance stays
+aligned with the version of FastAPI installed in your project and updates when you update FastAPI.
+After installing FastAPI in your project, you can install the skill with Library Skills:
+uvx library-skills
+Note:
+uvx is an alias for uv tool run. It runs Library Skills in a temporary, isolated environment while Library
+Skills scans the packages installed in your project.
+The skill is compatible with Codex, Claude Code, Cursor, GitHub Copilot, Gemini CLI, Pi, OpenCode, and
+most other coding agents. For Claude Code, select .claude/skills when asked where to install the skill.

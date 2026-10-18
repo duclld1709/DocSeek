@@ -1,0 +1,94 @@
+Bigger Applications - Multiple Files
+If you are building an application or a web API,
+it's rarely the case that you can put everything in
+a single ﬁle.
+FastAPI provides a convenience tool to structure
+your application while keeping all the ﬂexibility.
+Note:
+If you come from Flask, this would be the
+equivalent of Flask's Blueprints.
+An example ﬁle structure
+Let's say you have a ﬁle structure like this:
+.
+├── app
+│   ├── __init__.py
+│   ├── main.py
+│   ├── dependencies.py
+│   └── routers
+│   │   ├── __init__.py
+│   │   ├── items.py
+│   │   └── users.py
+│   └── internal
+│       ├── __init__.py
+│       └── admin.py
+Tip:
+There are several __init__.py ﬁles: one in each
+directory or subdirectory.
+This is what allows importing code from one ﬁle
+into another.
+For example, in app/main.py you could have a
+line like:
+from app.routers import items
+•  The app directory contains everything.
+And it has an empty ﬁle app/__init__.py,
+so it is a "Python package" (a collection of
+"Python modules"): app.
+•  It contains an app/main.py ﬁle. As it is
+inside a Python package (a directory with
+a ﬁle __init__.py), it is a "module" of that
+package: app.main.
+•  There's also an app/dependencies.py ﬁle,
+just like app/main.py, it is a "module":
+app.dependencies.
+•  There's a subdirectory app/routers/ with
+another ﬁle __init__.py, so it's a "Python
+subpackage": app.routers.
+•  The ﬁle app/routers/items.py is inside a
+package, app/routers/, so, it's a
+submodule: app.routers.items.
+•  The same with app/routers/users.py, it's
+another submodule: app.routers.users.
+•  There's also a subdirectory app/
+internal/ with another ﬁle __init__.py,
+so it's another "Python subpackage":
+app.internal.
+•  And the ﬁle app/internal/admin.py is
+another submodule: app.internal.admin.
+[image: package.drawio.svg]
+The same ﬁle structure with comments:
+.
+├── app                  # "app" is a
+Python package
+│   ├── __init__.py      # this file makes
+"app" a "Python package"
+│   ├── main.py          # "main" module,
+e.g. import app.main
+│   ├── dependencies.py  # "dependencies"
+module, e.g. import app.dependencies
+│   └── routers          # "routers" is a
+"Python subpackage"
+│   │   ├── __init__.py  # makes "routers"
+a "Python subpackage"
+│   │   ├── items.py     # "items"
+submodule, e.g. import app.routers.items
+│   │   └── users.py     # "users"
+submodule, e.g. import app.routers.users
+│   └── internal         # "internal" is a
+"Python subpackage"
+│       ├── __init__.py  # makes
+"internal" a "Python subpackage"
+│       └── admin.py     # "admin"
+submodule, e.g. import app.internal.admin
+APIRouter
+Let's say the ﬁle dedicated to handling just users
+is the submodule at /app/routers/users.py.
+You want to have the path operations related to
+your users separated from the rest of the code,
+to keep it organized.
+But it's still part of the same FastAPI application/
+web API (it's part of the same "Python
+Package").
+You can create the path operations for that
+module using APIRouter.
+Import APIRouter
+You import it and create an "instance" the same

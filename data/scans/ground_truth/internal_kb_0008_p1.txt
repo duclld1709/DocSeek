@@ -1,0 +1,40 @@
+Ledger database connection
+pool sizing
+This runbook outlines the conﬁguration
+constraints and operational parameters for the
+ledger-service database connection pool.
+Proper sizing is critical to maintaining database
+stability and preventing connection exhaustion in
+the PostgreSQL cluster managed by the
+platform-team.
+Pool capacity constraints
+To ensure predictable resource utilization across
+the Kubernetes cluster, each ledger-service
+pod is strictly limited in its connection footprint.
+Each pod maintains a maximum of 50 database
+connections at any given time. Engineers should
+account for this limit when scaling the number of
+replicas or when modifying the ledger-service
+concurrency models. Exceeding this per-pod
+limit will trigger connection queuing at the driver
+level, leading to increased latency for transaction
+processing.
+Lifecycle and idle management
+Eﬃcient resource reclamation is handled by the
+connection pooler integrated into the ledger-
+service runtime. To mitigate the accumulation of
+orphaned or stale sessions, the pool policy
+enforces a strict timeout mechanism.
+Connections that remain idle for more than 300
+seconds are automatically closed and removed
+from the pool.
+This threshold balances the overhead of frequent
+TCP handshakes against the necessity of
+keeping the database connection count within
+operational limits. If services experience high
+latency during traﬃc spikes, verify that the
+connection pool is not prematurely closing active
+connections due to misconﬁgured keep-alives or
+aggressive application-side timeouts. Direct any
+questions regarding database connectivity tuning
+to the platform-team internal Slack channel.

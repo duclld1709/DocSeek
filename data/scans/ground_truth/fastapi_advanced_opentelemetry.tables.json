@@ -1,0 +1,41 @@
+[
+ {
+  "header": [
+   "Setting",
+   "Purpose",
+   "Default"
+  ],
+  "rows": [
+   [
+    "`tracing`",
+    "Record HTTP request and WebSocket connection spans",
+    "`True`"
+   ],
+   [
+    "`metrics`",
+    "Record HTTP request metrics",
+    "`True`"
+   ],
+   [
+    "`logs`",
+    "Record validation failures and unhandled exceptions",
+    "`True`"
+   ],
+   [
+    "`operation_spans`",
+    "Add spans for request operations",
+    "`True`"
+   ],
+   [
+    "`exclude`",
+    "Skip requests when a function receiving the ASGI scope returns `True`",
+    "`None`"
+   ],
+   [
+    "`auto_configure`",
+    "Add exporters for endpoints set in environment variables",
+    "`True` if `FASTAPI_OTEL_AUTO_CONFIGURE=true`, otherwise `False`"
+   ]
+  ]
+ }
+]

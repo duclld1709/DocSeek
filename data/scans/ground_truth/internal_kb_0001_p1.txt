@@ -1,0 +1,20 @@
+Card processor timeouts
+Overview
+This runbook details the timeout conﬁguration and error handling strategy for outgoing requests to the
+upstream card processor. This document is currently marked as deprecated and is maintained for historical
+reference only, as the underlying architecture has been superseded by newer service implementations.
+The payments-team maintains ownership of these legacy procedures.
+Conﬁguration and Retry Logic
+When the system initiates an authorization request to the upstream card processor, the service enforces a
+strict timeout of 30 seconds. This duration accounts for network latency and the processing overhead
+observed in the upstream provider's environment.
+In the event of a timeout, the system must not immediately terminate the transaction. Instead, the
+application layer is conﬁgured to retry the authorization request twice. If both retry attempts fail due to a
+subsequent timeout, the payment process must be aborted, and a failure status must be returned to the
+client. Engineers should verify that the retry mechanism utilizes exponential backoﬀ to avoid overwhelming
+the processor during periods of degradation.
+Troubleshooting
+If you observe an increase in authorization failures, verify the logs for the speciﬁc payment UUIDs. Ensure
+that the 30-second timeout threshold is the root cause rather than a 5xx response from the provider. If the
+issue persists, review the circuit breaker status in the payments-team dashboard to determine if the
+upstream endpoint has been temporarily tripped.

@@ -1,0 +1,42 @@
+WebSockets
+You can use WebSockets with FastAPI.
+Install websockets
+Add websockets (a Python library that makes it easy to use the "WebSocket" protocol) to your project:
+$ uv add websockets
+---> 100%
+WebSockets client
+In production
+In your production system, you probably have a frontend created with a modern framework like React,
+Vue.js or Angular.
+And to communicate using WebSockets with your backend you would probably use your frontend's utilities.
+Or you might have a native mobile application that communicates with your WebSocket backend directly, in
+native code.
+Or you might have any other way to communicate with the WebSocket endpoint.
+But for this example, we'll use a very simple HTML document with some JavaScript, all inside a long string.
+This, of course, is not optimal and you wouldn't use it for production.
+In production you would have one of the options above.
+But it's the simplest way to focus on the server-side of WebSockets and have a working example:
+from fastapi import FastAPI, WebSocket
+from fastapi.responses import HTMLResponse
+app = FastAPI()
+html = """
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chat</title>
+    </head>
+    <body>
+        <h1>WebSocket Chat</h1>
+        <form action="" onsubmit="sendMessage(event)">
+            <input type="text" id="messageText" autocomplete="off"/>
+            <button>Send</button>
+        </form>
+        <ul id='messages'>
+        </ul>
+        <script>
+            var ws = new WebSocket("ws://localhost:8000/ws");
+            ws.onmessage = function(event) {
+                var messages = document.getElementById('messages')
+                var message = document.createElement('li')
+                var content = document.createTextNode(event.data)
+                message.appendChild(content)

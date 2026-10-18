@@ -1,0 +1,21 @@
+Public API rate limits
+Overview
+The api-platform-team enforces rate limiting to ensure equitable resource distribution across all merchant
+accounts. These constraints protect our infrastructure from overload and maintain consistent performance
+for all API consumers. The limits are applied globally to each merchant account based on their unique API
+key.
+Thresholds
+Each merchant may send 300 requests per minute to the public API. We utilize a token bucket algorithm to
+accommodate traﬃc spikes. Bursts of up to 50 extra requests are allowed within any 10-second window,
+provided the rolling minute average remains within the deﬁned bounds. This conﬁguration is intended to
+handle transient traﬃc surges but should not be relied upon for sustained high-volume operations.
+Error handling
+When a merchant exceeds the allowed rate, the API will return an HTTP 429 Too Many Requests status
+code. The response includes a Retry-After header indicating the number of seconds the client must wait
+before attempting to submit further requests. Clients should implement exponential backoﬀ strategies to
+handle these responses gracefully. Continued attempts to exceed thresholds may result in temporary
+account throttling or IP-level blocking.
+Implementation guidelines
+All requests must include the required authentication headers associated with the speciﬁc merchant API
+key. We recommend that clients monitor the X-RateLimit-Remaining and X-RateLimit-Reset headers
+returned in API responses to proactively manage their request ﬂow and stay within the allocated quotas.

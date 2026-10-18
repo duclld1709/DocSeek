@@ -1,0 +1,51 @@
+[
+ {
+  "header": [
+   "Code",
+   "HTTP status",
+   "Meaning"
+  ],
+  "rows": [
+   [
+    "ACME-4001",
+    "402",
+    "Card declined by issuer"
+   ],
+   [
+    "ACME-4290",
+    "429",
+    "Merchant exceeded rate limit"
+   ],
+   [
+    "ACME-5030",
+    "503",
+    "Card processor unavailable"
+   ],
+   [
+    "ACME-4002",
+    "400",
+    "Invalid request payload"
+   ],
+   [
+    "ACME-4010",
+    "401",
+    "Authentication failed"
+   ],
+   [
+    "ACME-4030",
+    "403",
+    "Insufficient permissions"
+   ],
+   [
+    "ACME-4040",
+    "404",
+    "Resource not found"
+   ],
+   [
+    "ACME-5000",
+    "500",
+    "Internal server error"
+   ]
+  ]
+ }
+]

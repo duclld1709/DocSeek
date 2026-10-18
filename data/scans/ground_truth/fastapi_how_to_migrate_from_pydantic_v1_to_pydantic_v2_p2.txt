@@ -1,0 +1,40 @@
+from pydantic.v1 import BaseModel
+class Item(BaseModel):
+    name: str
+    description: str | None = None
+    size: float
+FastAPI support for Pydantic v1 in v2
+Warning:
+This FastAPI support for pydantic.v1 models was added in FastAPI 0.119.0 and removed in FastAPI
+0.128.0. It was meant to be a temporary aid for the migration to Pydantic v2.
+In current versions of FastAPI, using a pydantic.v1 model in your app will raise an error.
+The rest of this section describes the temporary support available only in those older versions.
+Since FastAPI 0.119.0, there's also partial support for Pydantic v1 from inside of Pydantic v2, to facilitate
+the migration to v2.
+So, you could upgrade Pydantic to the latest version 2, and change the imports to use the pydantic.v1
+submodule, and in many cases it would just work.
+from fastapi import FastAPI
+from pydantic.v1 import BaseModel
+class Item(BaseModel):
+    name: str
+    description: str | None = None
+    size: float
+app = FastAPI()
+@app.post("/items/")
+async def create_item(item: Item) -> Item:
+    return item
+Warning:
+Have in mind that as the Pydantic team no longer supports Pydantic v1 in recent versions of Python,
+starting from Python 3.14, using pydantic.v1 is also not supported in Python 3.14 and above.
+Pydantic v1 and v2 on the same app
+It's not supported by Pydantic to have a model of Pydantic v2 with its own ﬁelds deﬁned as Pydantic v1
+models or vice versa.
+graph TB
+    subgraph "❌ Not Supported"
+        direction TB
+        subgraph V2["Pydantic v2 Model"]
+            V1Field["Pydantic v1 Model"]
+        end
+        subgraph V1["Pydantic v1 Model"]
+            V2Field["Pydantic v2 Model"]
+        end

@@ -1,0 +1,20 @@
+Ledger database connection pool sizing
+Overview
+This runbook documents the legacy connection pool conﬁguration for the ledger-service. This document
+is currently marked as deprecated, as the infrastructure has been migrated to a newer connection
+management pattern. Engineering teams should refer to the updated platform documentation for current
+best practices regarding database resource allocation.
+Conﬁguration
+In the legacy architecture, each ledger-service pod is strictly limited to opening at most 20 database
+connections. This hard limit was implemented to prevent connection exhaustion on the primary
+PostgreSQL instances during high-traﬃc events. When tuning the pool, ensure that the sum of connections
+across all active replicas does not exceed the max_connections threshold deﬁned in the database cluster
+conﬁguration. Failure to respect this constraint will result in connection queuing and increased latency for
+downstream payment operations.
+Troubleshooting
+If you observe OperationalError: FATAL: remaining connection slots are reserved in the logs, verify
+that the number of replicas does not exceed the available headroom calculated against the 20-connection
+limit per pod. If the application requires higher throughput, do not increase the per-pod connection limit.
+Instead, evaluate the implementation of a sidecar connection pooler like PgBouncer to manage
+multiplexing eﬀectively. All modiﬁcations to these parameters require a review by the platform-team to
+ensure cluster stability.

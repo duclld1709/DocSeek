@@ -279,6 +279,23 @@ def data_fetch(
     console.print(f"{m.file_count} files: {m.counts_by_extension} -> {corpus.manifest_path}")
 
 
+@data_app.command("make-scans")
+def data_make_scans(
+    out: Annotated[Path, typer.Option(help="Output root.")] = Path("data/scans"),
+    dpi: Annotated[int, typer.Option(help="Rasterisation DPI.")] = 150,
+    max_pages: Annotated[int, typer.Option(help="Pages per document.")] = 2,
+) -> None:
+    """Corpus C: render ~20 docs pages + 10 KB docs as degraded image-only PDFs + ground truth."""
+    from docseek.core.models import Section
+    from docseek.data.make_scans import make_scans
+    from docseek.ingest.pipeline import read_jsonl
+
+    sections = read_jsonl(Path("data/processed/sections.jsonl"), Section)
+    m = make_scans(sections, out, dpi=dpi, max_pages=max_pages)
+    pages = sum(s["pages"] for s in m["scans"])
+    console.print(f"{len(m['scans'])} scans, {pages} pages -> {out}")
+
+
 @data_app.command("gen-internal")
 def data_gen_internal(
     force: Annotated[bool, typer.Option(help="Regenerate docs that already exist.")] = False,

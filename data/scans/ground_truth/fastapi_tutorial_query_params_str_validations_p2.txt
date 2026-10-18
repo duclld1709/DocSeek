@@ -1,0 +1,38 @@
+Use Annotated in the type for the q parameter
+Remember I told you before that Annotated can be used to add metadata to your parameters in the Python
+Types Intro?
+Now it's the time to use it with FastAPI. Ὠ
+We had this type annotation:
+q: str | None = None
+What we will do is wrap that with Annotated, so it becomes:
+q: Annotated[str | None] = None
+Both of those versions mean the same thing, q is a parameter that can be a str or None, and by default, it is
+None.
+Now let's jump to the fun stuﬀ. ὁ
+Add Query to Annotated in the q parameter
+Now that we have this Annotated where we can put more information (in this case some additional
+validation), add Query inside of Annotated, and set the parameter max_length to 50:
+from typing import Annotated
+from fastapi import FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async def read_items(q: Annotated[str | None, Query(max_length=50)] = None):
+    results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+    if q:
+        results.update({"q": q})
+    return results
+Notice that the default value is still None, so the parameter is still optional.
+But now, having Query(max_length=50) inside of Annotated, we are telling FastAPI that we want it to have
+additional validation for this value, we want it to have maximum 50 characters. ὠ
+Tip:
+Here we are using Query() because this is a query parameter. Later we will see others like Path(),
+Body(), Header(), and Cookie(), that also accept the same arguments as Query().
+FastAPI will now:
+•  Validate the data making sure that the max length is 50 characters
+•  Show a clear error for the client when the data is not valid
+•  Document the parameter in the OpenAPI schema path operation (so it will show up in the
+automatic docs UI)
+Alternative (old): Query as the default value
+Previous versions of FastAPI (before 0.95.0 (before 2023-03)) required you to use Query as the default
+value of your parameter, instead of putting it in Annotated, there's a high chance that you will see code
+using it around, so I'll explain it to you.

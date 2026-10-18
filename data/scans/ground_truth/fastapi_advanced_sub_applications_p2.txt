@@ -1,0 +1,32 @@
+Mount the sub-application
+In your top-level application, app, mount the sub-application, subapi.
+In this case, it will be mounted at the path /subapi:
+from fastapi import FastAPI
+app = FastAPI()
+@app.get("/app")
+def read_main():
+    return {"message": "Hello World from main app"}
+subapi = FastAPI()
+@subapi.get("/sub")
+def read_sub():
+    return {"message": "Hello World from sub API"}
+app.mount("/subapi", subapi)
+Check the automatic API docs
+Now, run the fastapi command:
+$ uv run fastapi dev
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+And open the docs at http://127.0.0.1:8000/docs.
+You will see the automatic API docs for the main app, including only its own path operations:
+[image: image01.png]
+And then, open the docs for the sub-application, at http://127.0.0.1:8000/subapi/docs.
+You will see the automatic API docs for the sub-application, including only its own path operations, all
+under the correct sub-path preﬁx /subapi:
+[image: image02.png]
+If you try interacting with any of the two user interfaces, they will work correctly, because the browser will
+be able to talk to each speciﬁc app or sub-app.
+Technical Details: root_path
+When you mount a sub-application as described above, FastAPI will take care of communicating the mount
+path for the sub-application using a mechanism from the ASGI speciﬁcation called a root_path.
+That way, the sub-application will know to use that path preﬁx for the docs UI.
+And the sub-application could also have its own mounted sub-applications and everything would work
+correctly, because FastAPI handles all these root_paths automatically.

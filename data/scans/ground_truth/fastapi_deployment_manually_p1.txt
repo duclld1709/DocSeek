@@ -1,0 +1,83 @@
+Run a Server Manually
+Use the fastapi run Command
+In short, use fastapi run to serve your FastAPI
+application:
+$ fastapi run main.py
+   FastAPI   Starting production server Ὠ
+             Searching for package file
+structure from directories
+             with __init__.py files
+             Importing from /home/user/
+code/awesomeapp
+    module   ὁ main.py
+      code   Importing the FastAPI app
+object from the module with
+             the following code:
+             from main import app
+       app   Using import string: main:app
+    server   Server started at
+http://0.0.0.0:8000
+    server   Documentation at
+http://0.0.0.0:8000/docs
+             Logs:
+      INFO   Started server process
+[2306215]
+      INFO   Waiting for application
+startup.
+      INFO   Application startup complete.
+      INFO   Uvicorn running on
+http://0.0.0.0:8000 (Press CTRL+C
+             to quit)
+That would work for most of the cases. ὠ
+You could use that command for example to
+start your FastAPI app in a container, in a
+server, etc.
+ASGI Servers
+Let's go a little deeper into the details.
+FastAPI uses a standard for building Python web
+frameworks and servers called ASGI
+(Asynchronous Server Gateway Interface).
+FastAPI is an ASGI web framework.
+The main thing you need to run a FastAPI
+application (or any other ASGI application) in a
+remote server machine is an ASGI server
+program like Uvicorn, this is the one that comes
+by default in the fastapi command.
+There are several alternatives, including:
+•  Uvicorn: a high performance ASGI server.
+•  Hypercorn: an ASGI server compatible
+with HTTP/2 and Trio among other
+features.
+•  Daphne: the ASGI server built for Django
+Channels.
+•  Granian: A Rust HTTP server for Python
+applications.
+Server Machine and Server Program
+There's a small detail about names to keep in
+mind. ὴ
+The word "server" is commonly used to refer to
+both the remote/cloud computer (the physical or
+virtual machine) and also the program that is
+running on that machine (e.g. Uvicorn).
+Just keep in mind that when you read "server" in
+general, it could refer to one of those two things.
+When referring to the remote machine, it's
+common to call it server, but also machine, VM
+(virtual machine), node. Those all refer to some
+type of remote machine, normally running Linux,
+where you run programs.
+Install the Server Program
+When you install FastAPI, it comes with a
+production server, Uvicorn, and you can start it
+with the fastapi run command.
+But you can also install an ASGI server
+manually.
+Add the server application to your project.
+For example, to install Uvicorn:
+$ uv add "uvicorn[standard]"
+---> 100%
+A similar process would apply to any other ASGI
+server program.
+Tip:
+By adding the standard, Uvicorn will install and
+use some recommended extra dependencies.

@@ -1,0 +1,41 @@
+[
+ {
+  "header": [
+   "Service",
+   "Monthly uptime SLA",
+   "p95 latency target"
+  ],
+  "rows": [
+   [
+    "Payments API",
+    "99.95%",
+    "400 ms"
+   ],
+   [
+    "Payouts API",
+    "99.9%",
+    "600 ms"
+   ],
+   [
+    "Ledger Service",
+    "99.95%",
+    "250 ms"
+   ],
+   [
+    "Auth Service",
+    "99.99%",
+    "150 ms"
+   ],
+   [
+    "Webhooks API",
+    "99.9%",
+    "800 ms"
+   ],
+   [
+    "KYC Service",
+    "99.5%",
+    "1200 ms"
+   ]
+  ]
+ }
+]

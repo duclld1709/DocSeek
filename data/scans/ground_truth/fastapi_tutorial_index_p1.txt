@@ -1,0 +1,37 @@
+Tutorial - User Guide
+This tutorial shows you how to use FastAPI with most of its features, step by step.
+Each section gradually builds on the previous ones, but it's structured to separate topics, so that you can
+go directly to any speciﬁc one to solve your speciﬁc API needs.
+It is also built to work as a future reference so you can come back and see exactly what you need.
+Run the code
+All the code blocks can be copied and used directly (they are actually tested Python ﬁles).
+To run any of the examples, copy the code to a ﬁle main.py, and start fastapi dev with uv run:
+$ uv run fastapi dev
+   FastAPI   Starting development server Ὠ
+             Searching for package file structure from directories
+             with __init__.py files
+             Importing from /home/user/code/awesomeapp
+    module   ὁ main.py
+      code   Importing the FastAPI app object from the module with
+             the following code:
+             from main import app
+       app   Using import string: main:app
+    server   Server started at http://127.0.0.1:8000
+    server   Documentation at http://127.0.0.1:8000/docs
+       tip   Running in development mode, for production use:
+             fastapi run
+             Logs:
+      INFO   Will watch for changes in these directories:
+             ['/home/user/code/awesomeapp']
+      INFO   Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C
+             to quit)
+      INFO   Started reloader process [383138] using WatchFiles
+      INFO   Started server process [383153]
+      INFO   Waiting for application startup.
+      INFO   Application startup complete.
+It is HIGHLY encouraged that you write or copy the code, edit it and run it locally.
+Using it in your editor is what really shows you the beneﬁts of FastAPI, seeing how little code you have to
+write, all the type checks, autocompletion, etc.
+Install FastAPI
+The ﬁrst step is to set up your project and add FastAPI.
+Install uv, then create a project and add FastAPI:

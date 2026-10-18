@@ -1,0 +1,41 @@
+invoices_callback_router = APIRouter()
+@invoices_callback_router.post(
+    "{$callback_url}/invoices/{$request.body.id}", response_model=InvoiceEventReceived
+)
+def invoice_notification(body: InvoiceEvent):
+    pass
+@app.post("/invoices/", callbacks=invoices_callback_router.routes)
+def create_invoice(invoice: Invoice, callback_url: HttpUrl | None = None):
+    """
+    Create an invoice.
+    This will (let's imagine) let the API user (some external developer) create an
+    invoice.
+    And this path operation will:
+    * Send the invoice to the client.
+    * Collect the money from the client.
+    * Send a notification back to the API user (the external developer), as a callback.
+        * At this point is that the API will somehow send a POST request to the
+            external API with the notification of the invoice event
+            (e.g. "payment successful").
+    """
+    # Send the invoice, collect the money, send the notification (the callback)
+    return {"msg": "Invoice received"}
+Tip:
+The callback_url query parameter uses a Pydantic Url type.
+The only new thing is the callbacks=invoices_callback_router.routes as an argument to the path
+operation decorator. We'll see what that is next.
+Documenting the callback
+The actual callback code will depend heavily on your own API app.
+And it will probably vary a lot from one app to the next.
+It could be just one or two lines of code, like:
+callback_url = "https://example.com/api/v1/invoices/events/"
+httpx.post(callback_url, json={"description": "Invoice paid", "paid": True})
+But possibly the most important part of the callback is making sure that your API user (the external
+developer) implements the external API correctly, according to the data that your API is going to send in
+the request body of the callback, etc.
+So, what we will do next is add the code to document how that external API should look to receive the
+callback from your API.
+That documentation will show up in the Swagger UI at /docs in your API, and it will let external developers
+know how to build the external API.
+This example doesn't implement the callback itself (that could be just a line of code), only the
+documentation part.

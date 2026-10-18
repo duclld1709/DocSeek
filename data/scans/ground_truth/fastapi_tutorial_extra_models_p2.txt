@@ -1,0 +1,83 @@
+writing:
+UserInDB(**user_dict)
+would result in something equivalent to:
+UserInDB(
+    username="john",
+    password="secret",
+    email="john.doe@example.com",
+    full_name=None,
+)
+Or more exactly, using user_dict directly, with
+whatever contents it might have in the future:
+UserInDB(
+    username=user_dict["username"],
+    password=user_dict["password"],
+    email=user_dict["email"],
+    full_name=user_dict["full_name"],
+)
+A Pydantic model from the contents of
+another
+As in the example above we got user_dict from
+user_in.model_dump(), this code:
+user_dict = user_in.model_dump()
+UserInDB(**user_dict)
+would be equivalent to:
+UserInDB(**user_in.model_dump())
+...because user_in.model_dump() is a dict, and
+then we make Python "unpack" it by passing it to
+UserInDB preﬁxed with **.
+So, we get a Pydantic model from the data in
+another Pydantic model.
+Unpacking a dict and extra keywords
+And then adding the extra keyword argument
+hashed_password=hashed_password, like in:
+UserInDB(**user_in.model_dump(),
+hashed_password=hashed_password)
+...ends up being like:
+UserInDB(
+    username=user_dict["username"],
+    password=user_dict["password"],
+    email=user_dict["email"],
+    full_name=user_dict["full_name"],
+    hashed_password=hashed_password,
+)
+Warning:
+The supporting additional functions
+fake_password_hasher and fake_save_user are
+just to demo a possible ﬂow of the data, but they
+of course are not providing any real security.
+Reduce duplication
+Reducing code duplication is one of the core
+ideas in FastAPI.
+As code duplication increases the chances of
+bugs, security issues, code desynchronization
+issues (when you update in one place but not in
+the others), etc.
+And these models are all sharing a lot of the data
+and duplicating attribute names and types.
+We could do better.
+We can declare a UserBase model that serves as
+a base for our other models. And then we can
+make subclasses of that model that inherit its
+attributes (type declarations, validation, etc).
+All the data conversion, validation,
+documentation, etc. will still work as normally.
+That way, we can declare just the diﬀerences
+between the models (with plaintext password,
+with hashed_password and without password):
+from fastapi import FastAPI
+from pydantic import BaseModel, EmailStr
+app = FastAPI()
+class UserBase(BaseModel):
+    username: str
+    email: EmailStr
+    full_name: str | None = None
+class UserIn(UserBase):
+    password: str
+class UserOut(UserBase):
+    pass
+class UserInDB(UserBase):
+    hashed_password: str
+def fake_password_hasher(raw_password:
+str):
+    return "supersecret" + raw_password
