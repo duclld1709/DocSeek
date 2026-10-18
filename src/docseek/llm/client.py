@@ -342,8 +342,16 @@ def build_llm_client(
 def is_degradable(exc: BaseException) -> bool:
     """True for LLM failures the pipeline may degrade around (bad JSON, provider/API errors).
 
-    Budget and spend-limit stops are never degradable: they must halt the run.
+    Budget and spend-limit stops are never degradable: they must halt the run. With
+    ``DOCSEEK_LLM_STRICT=1`` (experiments) only invalid structured output degrades, so a quota
+    or provider outage fails the run instead of silently scoring the un-expanded pipeline.
     """
+    import os
+
     from docseek.llm.cost import BudgetExceededError
 
-    return not isinstance(exc, BudgetExceededError) and isinstance(exc, Exception)
+    if isinstance(exc, BudgetExceededError) or not isinstance(exc, Exception):
+        return False
+    if os.environ.get("DOCSEEK_LLM_STRICT") == "1":
+        return isinstance(exc, StructuredOutputError)
+    return True

@@ -138,6 +138,17 @@ class LLMConfig(_YamlModel):
     judge: LLMRoleConfig
     agent: LLMRoleConfig
     vision: LLMRoleConfig
+    # Query understanding (classify, rewrite, HyDE, decompose, filters). Defaults to the
+    # generator; set separately when a free-tier daily quota is per model (ADR 0005).
+    query: LLMRoleConfig | None = None
+
+    @property
+    def query_role(self) -> LLMRoleConfig:
+        return self.query or self.generator
+
+    def roles(self) -> tuple[LLMRoleConfig, ...]:
+        extra = (self.query,) if self.query is not None else ()
+        return (self.generator, self.judge, self.agent, self.vision, *extra)
 
     @model_validator(mode="after")
     def _check_judge_family(self) -> Self:
@@ -180,7 +191,7 @@ class ModelsConfig(_YamlModel):
     def model_params(self) -> dict[str, dict[str, object]]:
         """Extra LiteLLM kwargs per model name (same model in two roles must agree)."""
         out: dict[str, dict[str, object]] = {}
-        for role in (self.llm.generator, self.llm.judge, self.llm.agent, self.llm.vision):
+        for role in self.llm.roles():
             params: dict[str, object] = {}
             if role.reasoning_effort is not None:
                 params["reasoning_effort"] = role.reasoning_effort
@@ -189,7 +200,7 @@ class ModelsConfig(_YamlModel):
         return out
 
     def rpm_limits(self) -> dict[str, int]:
-        roles = (self.llm.generator, self.llm.judge, self.llm.agent, self.llm.vision)
+        roles = self.llm.roles()
         limits: dict[str, int] = {}
         for role in roles:
             if role.rpm is not None:

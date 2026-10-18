@@ -44,7 +44,7 @@ def llm() -> CachedLLMClient:
 def generator_role() -> Any:
     from docseek.core.config import load_models_config
 
-    return load_models_config().llm.generator
+    return load_models_config().llm.query_role
 
 
 def _inner(

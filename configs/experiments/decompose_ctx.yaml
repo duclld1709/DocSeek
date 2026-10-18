@@ -1,4 +1,4 @@
-# M5: decomposition into 2-3 sub-queries + original, RRF over fresh_ctx.
+# M5: decomposition (2-3 sub-queries + original, RRF) over fresh_ctx; scored on multihop only.
 name: decompose_ctx
 chunks_file: chunks_section_ctx.jsonl
 retriever:
@@ -31,3 +31,5 @@ retriever:
         dense:
           type: dense
           model: BAAI/bge-small-en-v1.5
+qtypes:
+- multihop

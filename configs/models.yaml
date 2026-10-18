@@ -12,6 +12,10 @@ llm:
     { model: "gemini/gemini-3.1-flash-lite", temperature: 0.0, reasoning_effort: "none", rpm: 10 }
   vision:
     { model: "gemini/gemini-3.1-flash-lite", temperature: 0.0, reasoning_effort: "none", rpm: 10 }
+  # Query understanding (M5). Separate model because the free tier caps requests per day per
+  # model (500 for 3.1-flash-lite, exhausted on 2026-10-18); see ADR 0005.
+  query:
+    { model: "gemini/gemini-3.5-flash-lite", temperature: 0.0, reasoning_effort: "none", rpm: 10 }
 
 # Hard cap on cumulative spend per provider over the whole project (spend ledger in the LLM
 # cache). OpenAI is pay-as-you-go with $2 left for M1-M8; Gemini is the free tier (its costs

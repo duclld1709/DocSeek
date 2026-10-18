@@ -60,6 +60,8 @@ class ExperimentConfig(BaseModel):
     golden: Path = Path("data/golden/golden_v1.jsonl")
     processed_dir: Path = Path("data/processed")
     chunks_file: str = "chunks.jsonl"  # M5 chunking ablation: chunks_<strategy>.jsonl
+    # Evaluate only these golden qtypes (e.g. decompose on multihop) to save LLM calls.
+    qtypes: list[str] | None = None
     seed: int = DEFAULT_SEED
     bootstrap_resamples: int = Field(default=1000, ge=100)
 
@@ -393,6 +395,8 @@ def run_experiment(
 ) -> Path:
     """Evaluate ``cfg`` on ``split`` and write the run directory; returns its path."""
     queries = select(golden, split=split)
+    if cfg.qtypes is not None:
+        queries = [q for q in queries if str(q.qtype) in cfg.qtypes]
     if not queries:
         raise ValueError(f"no golden queries in split {split!r}")
     run_dir = make_run_dir(experiments_dir, f"{cfg.name}_{split}")

@@ -26,14 +26,15 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--golden", type=Path, default=Path("data/golden/golden_v1.jsonl"))
     ap.add_argument("--no-llm", action="store_true")
+    ap.add_argument("--split", default="dev", choices=["dev", "test", "all"])
     args = ap.parse_args()
     run = make_run_dir(Path("experiments"), "m5_classify" + ("_rules" if args.no_llm else ""))
     tracer = Tracer(JsonlTraceSink(run / "traces.jsonl"))
     llm = None if args.no_llm else build_llm_client(Settings(), tracer)
-    clf = QueryClassifier(llm, load_models_config().llm.generator)
+    clf = QueryClassifier(llm, load_models_config().llm.query_role)
     rows = []
     for q in load_golden(args.golden):
-        if str(q.qtype) not in PREDICTED:
+        if str(q.qtype) not in PREDICTED or (args.split != "all" and q.split != args.split):
             continue
         c = clf.classify(q.text, use_llm=not args.no_llm)
         rows.append(
