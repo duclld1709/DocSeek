@@ -20,6 +20,8 @@ from docseek.testing.fakes import ScriptedLLM
         ("OAuth2PasswordBearer tokenUrl", QueryType.SYMBOL),
         ("what is the latest payment timeout policy", QueryType.FRESHNESS),
         ("is the old rotation runbook still valid", QueryType.FRESHNESS),
+        ("screenshot of the Swagger UI authorize dialog", QueryType.IMAGE),
+        ("SLA table in the scanned PDF", QueryType.SCAN),
         ("why use async def", None),
         ("how do I add CORS", None),
     ],

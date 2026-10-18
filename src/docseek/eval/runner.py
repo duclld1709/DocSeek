@@ -307,6 +307,16 @@ def build_retriever(
     return factory(cfg.retriever, chunks, golden, policy, cfg.seed)
 
 
+def section_acls(sections: Sequence[Section], chunks: Sequence[Chunk]) -> dict[str, list[str]]:
+    """ACL per section for Leakage@k: parsed sections, plus sections that exist only as chunks
+    (M7 scan pages) with the ACL their chunks carry. Unknown sections still count as leaks."""
+    out = {s.section_id: list(s.acl) for s in sections}
+    for c in chunks:
+        if c.section_id not in out:
+            out[c.section_id] = list(c.metadata.get("acl") or [])
+    return out
+
+
 @dataclass
 class QueryResult:
     qid: str
@@ -432,7 +442,7 @@ def run_experiment(
     token = RUN_TRACER.set(tracer)  # LLM-backed retrievers trace into this run
     try:
         retriever = build_retriever(cfg, chunks, golden, policy)
-        section_acl = {s.section_id: s.acl for s in sections}
+        section_acl = section_acls(sections, chunks)
         results = [
             evaluate_query(
                 q,

@@ -1,0 +1,7 @@
+# M7 image strategy 1: text -> CLIP image vector (cross-modal), image chunks only.
+name: img_clip
+golden: data/golden/golden_multimodal.jsonl
+qtypes: [image]
+chunks_file: chunks_images.jsonl
+retriever:
+  type: clip

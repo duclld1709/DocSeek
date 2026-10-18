@@ -18,8 +18,8 @@ from docseek.core.config import LLMRoleConfig
 from docseek.core.models import QueryType
 from docseek.llm.client import CachedLLMClient, is_degradable
 
-# Types the classifier may output. scan/image/permission depend on corpus or principal, not
-# on the wording, so they are not predicted from text in M5.
+# Types the LLM may output. permission depends on the principal, not the wording; scan/image
+# (M7) come only from explicit surface cues (rule_type), never from the LLM.
 PREDICTED = ("factoid", "howto", "conceptual", "symbol", "multihop", "freshness", "unanswerable")
 
 _BACKTICK = re.compile(r"`[^`]+`")
@@ -30,6 +30,15 @@ _FRESH = re.compile(
     r"\b(latest|current(ly)?|newest|most recent|up[- ]to[- ]date|still valid)\b",
     re.IGNORECASE,
 )
+# M7: visual cues. Generic UI/picture words, not tuned per query; "docs UI" alone is excluded
+# because text questions about the docs UI use it too.
+_IMAGE = re.compile(
+    r"\b(screenshots?|screen shots?|images?|pictures?|illustrations?|cartoons?|diagrams?|"
+    r"dialog|pop-?up|tooltip|autocomplet\w*|completion popup|greyed out|struck through|"
+    r"Swagger UI|ReDoc page|browser page)\b",
+    re.IGNORECASE,
+)
+_SCAN = re.compile(r"\b(scan(ned)?|pdf)\b", re.IGNORECASE)
 _HOWTO = re.compile(r"^\s*(how (do|can|should) (i|we|you)|how to)\b", re.IGNORECASE)
 
 log = structlog.get_logger(__name__)
@@ -49,6 +58,10 @@ class Classification:
 
 def rule_type(text: str) -> QueryType | None:
     """A label when a surface cue is unambiguous, else ``None``."""
+    if _IMAGE.search(text):
+        return QueryType.IMAGE
+    if _SCAN.search(text):
+        return QueryType.SCAN
     if _FRESH.search(text):
         return QueryType.FRESHNESS
     words = text.split()

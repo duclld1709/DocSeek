@@ -353,6 +353,7 @@ def data_images(
     chunks = image_chunks(refs, by_id, caps, texts)
     out = base_chunks.with_name(base_chunks.stem + "_images.jsonl")
     write_jsonl(out, [*read_jsonl(base_chunks, Chunk), *chunks])
+    write_jsonl(base_chunks.with_name("chunks_images.jsonl"), chunks)  # image-only strategies
     with (Path("data/processed") / "images.jsonl").open("w", encoding="utf-8", newline="\n") as fh:
         for ref in refs:
             row = {
@@ -377,6 +378,76 @@ def data_images(
     )
     write_json(run / "env.json", environment_info(command="docseek data images", model=role.model))
     console.print(f"{len(chunks)} image chunks -> {out} (run {run})")
+
+
+@data_app.command("scan-chunks")
+def data_scan_chunks(
+    base_chunks: Annotated[Path, typer.Option(help="Chunks to extend.")] = Path(
+        "data/processed/chunks_section_ctx_images.jsonl"
+    ),
+    ocr: Annotated[str, typer.Option(help="OCR engine: tesseract|rapidocr.")] = "tesseract",
+    scans: Annotated[Path, typer.Option(help="make-scans output.")] = Path("data/scans"),
+    golden: Annotated[Path, typer.Option(help="Golden set to remap.")] = Path(
+        "data/golden/golden_v1.jsonl"
+    ),
+    extra: Annotated[Path, typer.Option(help="Scan/image queries for the overall set.")] = Path(
+        "data/golden/golden_multimodal.jsonl"
+    ),
+) -> None:
+    """Corpus variant: scanned originals replaced by OCR'd page chunks; golden remapped."""
+    import json
+    from collections import defaultdict
+
+    from docseek.core.models import Chunk, Section
+    from docseek.eval.golden import load_golden, write_golden
+    from docseek.ingest.ocr import OcrEngine, RapidOcrEngine, TesseractEngine
+    from docseek.ingest.pdf_parser import parse_pdf
+    from docseek.ingest.pipeline import read_jsonl, write_jsonl
+    from docseek.ingest.scans import page_section_id, remap_relevance, scan_chunks, section_pages
+
+    engine: OcrEngine = {"tesseract": TesseractEngine, "rapidocr": RapidOcrEngine}[ocr]()
+    manifest = json.loads((scans / "ground_truth" / "manifest.json").read_text(encoding="utf-8"))
+    by_doc: defaultdict[str, list[Section]] = defaultdict(list)
+    for s in read_jsonl(Path("data/processed/sections.jsonl"), Section):
+        by_doc[s.doc_id].append(s)
+    replaced: dict[str, list[str]] = {}
+    new_chunks: list[Chunk] = []
+    for i, scan in enumerate(manifest["scans"], start=1):
+        name = scan["name"]
+        pages = parse_pdf(scans / "pdf" / f"{name}.pdf", engine)
+        new_chunks += scan_chunks(scan, [p.text for p in pages], engine.name)
+        gt = [
+            (scans / "ground_truth" / f"{name}_p{p}.txt").read_text(encoding="utf-8")
+            for p in range(1, scan["pages"] + 1)
+        ]
+        for sid, nums in section_pages(by_doc[scan["doc_id"]], gt).items():
+            replaced[sid] = [page_section_id(name, n) for n in nums]
+        console.print(f"[{i}/{len(manifest['scans'])}] {name}: {len(pages)} pages", highlight=False)
+    kept = [c for c in read_jsonl(base_chunks, Chunk) if c.section_id not in replaced]
+    out = base_chunks.with_name(base_chunks.stem + "_scans.jsonl")
+    write_jsonl(out, [*kept, *new_chunks])
+    Path("data/processed/scan_map.json").write_text(
+        json.dumps(replaced, indent=1, sort_keys=True), encoding="utf-8", newline="\n"
+    )
+    queries = load_golden(golden)
+    remapped = [
+        q.model_copy(
+            update={
+                "relevant": remap_relevance(q.relevant, replaced),
+                "stale": [t for s in q.stale for t in replaced.get(s, [s])],
+            }
+        )
+        for q in queries
+    ]
+    moved = sum(1 for q in queries if set(q.relevant) & set(replaced))
+    golden_out = golden.with_name(golden.stem + "_scans.jsonl")
+    write_golden(golden_out, remapped)
+    if extra.exists():  # overall M7 set: remapped v1 + scan/image queries
+        write_golden(golden.with_name("golden_m7.jsonl"), [*remapped, *load_golden(extra)])
+    console.print(
+        f"{len(replaced)} sections replaced by {len(new_chunks)} scan pages -> {out}; "
+        f"{moved} golden queries remapped -> {golden_out}"
+    )
 
 
 @data_app.command("gen-internal")

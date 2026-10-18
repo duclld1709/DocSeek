@@ -1,0 +1,15 @@
+# M7 image strategy 2: text -> caption + OCR text (image as text), image chunks only.
+# BM25 on the chunk body only (no section title/path fields), dense on the same text.
+name: img_caption
+golden: data/golden/golden_multimodal.jsonl
+qtypes: [image]
+chunks_file: chunks_images.jsonl
+retriever:
+  type: hybrid
+  method: weighted
+  norm: minmax
+  alpha: 0.3
+  depth: 50
+  children:
+    bm25: { type: bm25, k1: 1.5, b: 0.5, fields: { body: 1.0 } }
+    dense: { type: dense, model: BAAI/bge-small-en-v1.5 }
