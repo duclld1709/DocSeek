@@ -379,12 +379,16 @@ def eval_grid(
         raise typer.Exit(code=1)
     base = load_experiment(config)
     params = dict(parse_param(p) for p in param)
-    inputs = _eval_inputs(base.golden, base.processed_dir, base.chunks_file)
     experiments_dir = Settings().experiments_dir
+    loaded: dict[tuple[Path, Path, str], dict[str, object]] = {}
 
     def run_one(cfg: ExperimentConfig) -> Path:
+        # Grid points may change the golden set or the chunk file; load inputs per point.
+        key = (cfg.golden, cfg.processed_dir, cfg.chunks_file)
+        if key not in loaded:
+            loaded[key] = _eval_inputs(*key)
         console.print(f"  {cfg.name}")
-        return run_experiment(cfg, split=checked, experiments_dir=experiments_dir, **inputs)  # type: ignore[arg-type]
+        return run_experiment(cfg, split=checked, experiments_dir=experiments_dir, **loaded[key])  # type: ignore[arg-type]
 
     out = run_grid(base, params, run_one, split=checked, experiments_dir=experiments_dir)
     summary = json.loads((out / "summary.json").read_text(encoding="utf-8"))

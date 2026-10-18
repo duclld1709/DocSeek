@@ -1,0 +1,29 @@
+# M5: metadata stage over hybrid_weighted. Dev grids: the date boost (beta > 0) and the
+# deprecated penalty lowered nDCG; the superseded penalty alone removes stale hits.
+name: fresh_hybrid
+retriever:
+  type: freshness
+  beta: 0.0
+  tau_days: 180
+  deprecated_penalty: 0.0
+  superseded_penalty: 0.5
+  depth: 50
+  inner:
+    type: hybrid
+    method: weighted
+    norm: minmax
+    alpha: 0.5
+    depth: 50
+    children:
+      bm25:
+        type: bm25
+        k1: 1.5
+        b: 0.5
+        fields:
+          title: 2.0
+          section_path: 0.5
+          body: 1.0
+          code: 0.5
+      dense:
+        type: dense
+        model: BAAI/bge-small-en-v1.5
