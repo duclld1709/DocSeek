@@ -1,3 +1,9 @@
+import os
+
+# Before anything imports litellm: use its bundled price map, never fetch one from GitHub
+# (offline tests, prices pinned by uv.lock). docseek.llm.client does the same for real runs.
+os.environ.setdefault("LITELLM_LOCAL_MODEL_COST_MAP", "True")
+
 from collections.abc import Iterator
 from pathlib import Path
 
