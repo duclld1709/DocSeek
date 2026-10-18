@@ -1,0 +1,556 @@
+# Plan for Corpus B, the fictional "Acme Payments" internal KB (PROJECT_SPEC §3.2).
+# Metadata and the facts each doc must state are fixed here; the generator LLM only writes the
+# prose around them (`docseek data gen-internal`). That keeps the hard cases under control:
+#   - 8 old/new pairs whose facts contradict (old: deprecated, new: active + supersedes)
+#   - 6 security-team docs an eng-internal principal must never see
+#   - docs that reference FastAPI concepts (graph edges between the corpora in M6)
+# Facts are the ground truth for freshness/permission queries; numbers in them are checked.
+company: Acme Payments
+docs:
+  # --- conflict pair 1: card processor timeout (eng-internal) ---
+  - id: kb-0001
+    title: Card processor timeouts
+    doc_type: runbook
+    acl: [eng-internal]
+    owner: payments-team
+    version: 1
+    updated_at: 2025-09-12
+    status: deprecated
+    facts:
+      - The timeout for calls to the upstream card processor is 30 seconds.
+      - Retry a timed-out authorization twice before failing the payment.
+  - id: kb-0002
+    title: Card processor timeouts
+    doc_type: runbook
+    acl: [eng-internal]
+    owner: payments-team
+    version: 2
+    updated_at: 2026-08-02
+    supersedes: kb-0001
+    facts:
+      - The timeout for calls to the upstream card processor is 10 seconds.
+      - Retry a timed-out authorization once, then return HTTP 504 to the caller.
+    fastapi_refs: [Depends]
+
+  # --- conflict pair 2: JWT signing key rotation (security-team) ---
+  - id: kb-0003
+    title: Rotating JWT signing keys
+    doc_type: security-policy
+    acl: [security-team]
+    owner: security-team
+    version: 1
+    updated_at: 2025-07-01
+    status: deprecated
+    facts:
+      - JWT signing keys are rotated every 90 days.
+      - The previous signing key stays valid for 7 days after a rotation.
+  - id: kb-0004
+    title: Rotating JWT signing keys
+    doc_type: security-policy
+    acl: [security-team]
+    owner: security-team
+    version: 3
+    updated_at: 2026-06-20
+    supersedes: kb-0003
+    facts:
+      - JWT signing keys are rotated every 30 days.
+      - The previous signing key stays valid for 24 hours after a rotation.
+      - Keys are stored in the HSM cluster named `vault-hsm-2`.
+    fastapi_refs: [OAuth2PasswordBearer]
+
+  # --- conflict pair 3: public API rate limits (public) ---
+  - id: kb-0005
+    title: Public API rate limits
+    doc_type: api-convention
+    acl: [public]
+    owner: api-platform-team
+    version: 1
+    updated_at: 2025-10-03
+    status: deprecated
+    facts:
+      - Each merchant may send 100 requests per minute to the public API.
+      - Requests over the limit receive HTTP 429 with a Retry-After header.
+  - id: kb-0006
+    title: Public API rate limits
+    doc_type: api-convention
+    acl: [public]
+    owner: api-platform-team
+    version: 2
+    updated_at: 2026-05-14
+    supersedes: kb-0005
+    facts:
+      - Each merchant may send 300 requests per minute to the public API.
+      - Bursts of up to 50 extra requests are allowed within any 10-second window.
+      - Requests over the limit receive HTTP 429 with a Retry-After header.
+
+  # --- conflict pair 4: database connection pool (eng-internal) ---
+  - id: kb-0007
+    title: Ledger database connection pool sizing
+    doc_type: runbook
+    acl: [eng-internal]
+    owner: platform-team
+    version: 1
+    updated_at: 2025-08-20
+    status: deprecated
+    facts:
+      - Each `ledger-service` pod opens at most 20 database connections.
+  - id: kb-0008
+    title: Ledger database connection pool sizing
+    doc_type: runbook
+    acl: [eng-internal]
+    owner: platform-team
+    version: 2
+    updated_at: 2026-04-09
+    supersedes: kb-0007
+    facts:
+      - Each `ledger-service` pod opens at most 50 database connections.
+      - Connections idle for more than 300 seconds are closed by the pool.
+
+  # --- conflict pair 5: refund window (eng-internal) ---
+  - id: kb-0009
+    title: Refund API behaviour
+    doc_type: api-convention
+    acl: [eng-internal]
+    owner: payments-team
+    version: 1
+    updated_at: 2025-11-02
+    status: deprecated
+    facts:
+      - Refunds can be issued up to 90 days after the original capture.
+      - Partial refunds are limited to 5 per payment.
+  - id: kb-0010
+    title: Refund API behaviour
+    doc_type: api-convention
+    acl: [eng-internal]
+    owner: payments-team
+    version: 2
+    updated_at: 2026-09-01
+    supersedes: kb-0009
+    facts:
+      - Refunds can be issued up to 120 days after the original capture.
+      - Partial refunds are limited to 10 per payment.
+    fastapi_refs: [HTTPException]
+
+  # --- conflict pair 6: webhook retries (public) ---
+  - id: kb-0011
+    title: Webhook delivery and retries
+    doc_type: api-convention
+    acl: [public]
+    owner: api-platform-team
+    version: 1
+    updated_at: 2025-06-15
+    status: deprecated
+    facts:
+      - Failed webhook deliveries are retried 3 times over 1 hour.
+  - id: kb-0012
+    title: Webhook delivery and retries
+    doc_type: api-convention
+    acl: [public]
+    owner: api-platform-team
+    version: 2
+    updated_at: 2026-03-30
+    supersedes: kb-0011
+    facts:
+      - Failed webhook deliveries are retried 8 times over 24 hours with exponential backoff.
+      - Webhook payloads are signed with an HMAC-SHA256 signature in the Acme-Signature header.
+    fastapi_refs: [BackgroundTasks]
+
+  # --- conflict pair 7: on-call escalation (eng-internal) ---
+  - id: kb-0013
+    title: On-call escalation policy
+    doc_type: runbook
+    acl: [eng-internal]
+    owner: sre-team
+    version: 1
+    updated_at: 2025-09-30
+    status: deprecated
+    facts:
+      - If the primary on-call engineer does not acknowledge a page within 15 minutes, the secondary is paged.
+  - id: kb-0014
+    title: On-call escalation policy
+    doc_type: runbook
+    acl: [eng-internal]
+    owner: sre-team
+    version: 2
+    updated_at: 2026-07-11
+    supersedes: kb-0013
+    facts:
+      - If the primary on-call engineer does not acknowledge a page within 5 minutes, the secondary is paged.
+      - SEV1 incidents also page the engineering manager on duty immediately.
+
+  # --- conflict pair 8: service template (eng-internal) ---
+  - id: kb-0015
+    title: Python service template
+    doc_type: adr
+    acl: [eng-internal]
+    owner: platform-team
+    version: 1
+    updated_at: 2025-05-05
+    status: deprecated
+    facts:
+      - New Python services are created from the template on Python 3.10.
+      - Dependencies are declared with default-value style parameters, for example `db = Depends(get_db)`.
+    fastapi_refs: [Depends]
+  - id: kb-0016
+    title: Python service template
+    doc_type: adr
+    acl: [eng-internal]
+    owner: platform-team
+    version: 2
+    updated_at: 2026-02-18
+    supersedes: kb-0015
+    facts:
+      - New Python services are created from the template on Python 3.12.
+      - "Dependencies are declared with `Annotated`, for example `db: Annotated[Session, Depends(get_db)]`."
+    fastapi_refs: [Depends, Annotated]
+
+  # --- security-team (4 more; with pair 2 that makes 6) ---
+  - id: kb-0017
+    title: Leaked API key response
+    doc_type: runbook
+    acl: [security-team]
+    owner: security-team
+    version: 1
+    updated_at: 2026-04-27
+    facts:
+      - A leaked merchant API key must be revoked within 1 hour of detection.
+      - The secret scanner posts alerts to the channel `sec-alerts-critical`.
+  - id: kb-0018
+    title: PCI DSS scope and cardholder data zones
+    doc_type: security-policy
+    acl: [security-team]
+    owner: security-team
+    version: 2
+    updated_at: 2026-01-22
+    facts:
+      - Only the `vault-service` and the tokenizer run inside the cardholder data zone.
+      - Access to the cardholder data zone requires a hardware key and is reviewed every 90 days.
+  - id: kb-0019
+    title: 2026 Q2 penetration test findings
+    doc_type: postmortem
+    acl: [security-team]
+    owner: security-team
+    version: 1
+    updated_at: 2026-07-03
+    facts:
+      - The 2026 Q2 penetration test reported 3 high-severity findings.
+      - All high-severity findings must be fixed within 30 days.
+  - id: kb-0020
+    title: Break-glass admin access
+    doc_type: runbook
+    acl: [security-team]
+    owner: security-team
+    version: 1
+    updated_at: 2026-03-08
+    facts:
+      - Break-glass admin accounts expire automatically after 4 hours.
+      - Every break-glass session is reviewed by two members of the security team.
+
+  # --- public ---
+  - id: kb-0021
+    title: Getting started with the Acme Payments API
+    doc_type: onboarding
+    acl: [public]
+    owner: api-platform-team
+    version: 4
+    updated_at: 2026-06-01
+    facts:
+      - The sandbox base URL is `https://sandbox.api.acme-payments.example`.
+      - Test card number `4000 0000 0000 0002` always triggers a decline.
+  - id: kb-0022
+    title: Authenticating API clients
+    doc_type: api-convention
+    acl: [public]
+    owner: api-platform-team
+    version: 2
+    updated_at: 2026-02-02
+    facts:
+      - API clients authenticate with the OAuth2 client credentials flow.
+      - Access tokens expire after 3600 seconds.
+    fastapi_refs: [OAuth2PasswordBearer]
+  - id: kb-0023
+    title: API error codes
+    doc_type: api-convention
+    acl: [public]
+    owner: api-platform-team
+    version: 3
+    updated_at: 2026-05-20
+    table: Include a markdown table with columns Code, HTTP status, Meaning for at least 8 error codes.
+    facts:
+      - Error code ACME-4001 means the card was declined by the issuer and maps to HTTP 402.
+      - Error code ACME-4290 means the merchant exceeded the rate limit and maps to HTTP 429.
+      - Error code ACME-5030 means the card processor is unavailable and maps to HTTP 503.
+  - id: kb-0024
+    title: SLA by service
+    doc_type: api-convention
+    acl: [public]
+    owner: sre-team
+    version: 2
+    updated_at: 2026-04-01
+    table: Include a markdown table with columns Service, Monthly uptime SLA, p95 latency target for at least 6 services.
+    facts:
+      - The payments API has a monthly uptime SLA of 99.95%.
+      - The payouts API has a monthly uptime SLA of 99.9%.
+      - The p95 latency target for payment authorization is 400 ms.
+  - id: kb-0025
+    title: Idempotency keys
+    doc_type: api-convention
+    acl: [public]
+    owner: api-platform-team
+    version: 1
+    updated_at: 2025-12-10
+    facts:
+      - Idempotency keys are sent in the Idempotency-Key header and are stored for 24 hours.
+  - id: kb-0026
+    title: Pagination conventions
+    doc_type: api-convention
+    acl: [public]
+    owner: api-platform-team
+    version: 1
+    updated_at: 2025-10-21
+    facts:
+      - List endpoints use cursor pagination with a starting_after parameter.
+      - The maximum page size is 100 items and the default is 20.
+    fastapi_refs: [Query]
+  - id: kb-0027
+    title: API versioning policy
+    doc_type: api-convention
+    acl: [public]
+    owner: api-platform-team
+    version: 1
+    updated_at: 2026-01-15
+    facts:
+      - Deprecated API versions are supported for 12 months after a new version is released.
+      - The API version is selected with the Acme-Version header.
+  - id: kb-0028
+    title: Sandbox environment limits
+    doc_type: onboarding
+    acl: [public]
+    owner: api-platform-team
+    version: 1
+    updated_at: 2026-03-12
+    facts:
+      - Sandbox data is deleted every 30 days.
+
+  # --- eng-internal ---
+  - id: kb-0029
+    title: Use FastAPI for new HTTP services
+    doc_type: adr
+    acl: [eng-internal]
+    owner: platform-team
+    version: 1
+    updated_at: 2025-04-14
+    facts:
+      - All new HTTP services at Acme are built with FastAPI.
+      - Flask services are migrated only when they need a major change.
+    fastapi_refs: [APIRouter, Depends]
+  - id: kb-0030
+    title: Read replicas for ledger queries
+    doc_type: adr
+    acl: [eng-internal]
+    owner: platform-team
+    version: 1
+    updated_at: 2025-11-25
+    facts:
+      - Reporting queries read from PostgreSQL logical replicas, never from the primary.
+      - Replica lag above 5 seconds pages the platform on-call.
+  - id: kb-0031
+    title: Background work and the job queue
+    doc_type: adr
+    acl: [eng-internal]
+    owner: payments-team
+    version: 1
+    updated_at: 2026-01-09
+    facts:
+      - FastAPI BackgroundTasks are only used for non-critical work such as sending receipts.
+      - Payouts and anything that moves money run on the job queue named `payq`.
+    fastapi_refs: [BackgroundTasks]
+  - id: kb-0032
+    title: Request and response validation
+    doc_type: adr
+    acl: [eng-internal]
+    owner: api-platform-team
+    version: 1
+    updated_at: 2025-12-01
+    facts:
+      - Every path operation declares a response_model so that internal fields are never leaked.
+      - Monetary amounts are integers in minor units, never floats.
+    fastapi_refs: [response_model]
+  - id: kb-0033
+    title: Restarting the ledger service
+    doc_type: runbook
+    acl: [eng-internal]
+    owner: platform-team
+    version: 2
+    updated_at: 2026-05-02
+    facts:
+      - Restart `ledger-service` pods one at a time and wait for the readiness probe before the next one.
+      - Never restart the ledger service during the 23:00-01:00 UTC settlement window.
+  - id: kb-0034
+    title: Payout batch failures
+    doc_type: runbook
+    acl: [eng-internal]
+    owner: payments-team
+    version: 1
+    updated_at: 2026-02-27
+    facts:
+      - Payout batches run every day at 02:00 UTC.
+      - A failed batch can be re-run with the `payq-retry` command after the cause is fixed.
+  - id: kb-0035
+    title: Rotating database credentials
+    doc_type: runbook
+    acl: [eng-internal]
+    owner: platform-team
+    version: 1
+    updated_at: 2026-06-05
+    facts:
+      - Database credentials are rotated every 60 days by the `creds-rotator` job.
+  - id: kb-0036
+    title: Handling 429 spikes from the card network
+    doc_type: runbook
+    acl: [eng-internal]
+    owner: payments-team
+    version: 1
+    updated_at: 2026-08-19
+    facts:
+      - When the card network returns more than 200 HTTP 429 responses per minute, enable the `shed-load` feature flag.
+  - id: kb-0037
+    title: Postmortem of the January 2026 payout delay
+    doc_type: postmortem
+    acl: [eng-internal]
+    owner: payments-team
+    version: 1
+    updated_at: 2026-01-30
+    facts:
+      - On 2026-01-14 payouts were delayed by 6 hours.
+      - The root cause was an expired bank SFTP certificate.
+  - id: kb-0038
+    title: Postmortem of the May 2026 webhook storm
+    doc_type: postmortem
+    acl: [eng-internal]
+    owner: api-platform-team
+    version: 1
+    updated_at: 2026-05-28
+    facts:
+      - A retry bug sent 1.2 million duplicate webhooks in 40 minutes.
+      - The fix added a per-merchant delivery cap.
+  - id: kb-0039
+    title: Postmortem of the November 2025 ledger double posting
+    doc_type: postmortem
+    acl: [eng-internal]
+    owner: platform-team
+    version: 1
+    updated_at: 2025-11-19
+    facts:
+      - 312 ledger entries were posted twice because a consumer was not idempotent.
+  - id: kb-0040
+    title: Postmortem of the July 2026 expired TLS certificate
+    doc_type: postmortem
+    acl: [eng-internal]
+    owner: sre-team
+    version: 1
+    updated_at: 2026-07-22
+    facts:
+      - The public API was unavailable for 18 minutes because a TLS certificate expired.
+      - Certificates are now renewed automatically 30 days before expiry.
+  - id: kb-0041
+    title: Engineering onboarding checklist
+    doc_type: onboarding
+    acl: [eng-internal]
+    owner: platform-team
+    version: 3
+    updated_at: 2026-08-25
+    facts:
+      - New engineers get production read access after 30 days.
+      - The first on-call shift is shadowed by a senior engineer.
+  - id: kb-0042
+    title: Service ownership and on-call
+    doc_type: onboarding
+    acl: [eng-internal]
+    owner: sre-team
+    version: 1
+    updated_at: 2025-12-18
+    facts:
+      - Every service lists its owning team in the service catalog.
+      - On-call rotations are one week long and hand over on Mondays at 10:00 local time.
+  - id: kb-0043
+    title: Code review guidelines
+    doc_type: onboarding
+    acl: [eng-internal]
+    owner: platform-team
+    version: 2
+    updated_at: 2026-04-16
+    facts:
+      - Changes that touch money movement need two approvals.
+  - id: kb-0044
+    title: Service-to-service authentication with dependencies
+    doc_type: api-convention
+    acl: [eng-internal]
+    owner: api-platform-team
+    version: 1
+    updated_at: 2026-03-03
+    facts:
+      - Internal calls carry a service token that is verified by a shared dependency named require_service_token.
+      - A missing or invalid service token returns HTTP 401.
+    fastapi_refs: [Depends, Security, HTTPException]
+  - id: kb-0045
+    title: Error responses
+    doc_type: api-convention
+    acl: [eng-internal]
+    owner: api-platform-team
+    version: 1
+    updated_at: 2026-02-11
+    facts:
+      - Errors are returned as `application/problem+json` bodies.
+      - Handlers raise HTTPException with an Acme error code in the detail field.
+    fastapi_refs: [HTTPException]
+  - id: kb-0046
+    title: Router layout per bounded context
+    doc_type: api-convention
+    acl: [eng-internal]
+    owner: api-platform-team
+    version: 1
+    updated_at: 2025-10-08
+    facts:
+      - Each bounded context has its own APIRouter with a URL prefix such as `/payments` or `/payouts`.
+    fastapi_refs: [APIRouter]
+  - id: kb-0047
+    title: Health check endpoints
+    doc_type: api-convention
+    acl: [eng-internal]
+    owner: sre-team
+    version: 1
+    updated_at: 2026-06-30
+    facts:
+      - Every service exposes `/healthz` for liveness and `/readyz` for readiness.
+      - The readiness check fails while database migrations are running.
+  - id: kb-0048
+    title: Request IDs and logging middleware
+    doc_type: api-convention
+    acl: [eng-internal]
+    owner: platform-team
+    version: 1
+    updated_at: 2026-04-23
+    facts:
+      - A middleware adds an X-Request-ID header to every response.
+      - Logs are written as JSON and kept for 14 days.
+    fastapi_refs: [middleware]
+  - id: kb-0049
+    title: Feature flag rollout
+    doc_type: runbook
+    acl: [eng-internal]
+    owner: platform-team
+    version: 1
+    updated_at: 2026-09-10
+    facts:
+      - Feature flags are rolled out to 1%, 10%, 50% and then 100% of merchants.
+      - Each step waits at least 30 minutes while error rates are watched.
+  - id: kb-0050
+    title: KYC review queue backlog
+    doc_type: runbook
+    acl: [eng-internal]
+    owner: risk-team
+    version: 1
+    updated_at: 2026-09-22
+    facts:
+      - When the KYC review queue has more than 500 pending merchants, open an incident.

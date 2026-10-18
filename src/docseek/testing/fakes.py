@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from docseek.core.interfaces import FloatArray
 from docseek.core.models import LLMResponse, ScoredHit
@@ -85,7 +85,8 @@ class ScriptedLLM:
 
     A reply may be a plain string (becomes ``content``) or a full ``LLMResponse``. When the
     caller passes ``response_format``, the reply content is validated against it and stored
-    in ``parsed``, mirroring structured output from a real provider.
+    in ``parsed``; an invalid reply keeps ``parsed=None``, exactly like ``LiteLLMClient``
+    (``CachedLLMClient`` is what turns that into ``StructuredOutputError``).
     """
 
     replies: list[str | LLMResponse]
@@ -121,8 +122,9 @@ class ScriptedLLM:
             else LLMResponse(content=reply, model=model or self.model)
         )
         if response_format is not None and response.parsed is None:
-            if response.content is None:
-                raise ValueError("response_format requested but scripted reply has no content")
-            parsed = response_format.model_validate(json.loads(response.content))
+            try:
+                parsed = response_format.model_validate(json.loads(response.content or ""))
+            except (json.JSONDecodeError, ValidationError):
+                return response  # like LiteLLMClient: invalid replies come back unparsed
             response = response.model_copy(update={"parsed": parsed.model_dump(mode="json")})
         return response

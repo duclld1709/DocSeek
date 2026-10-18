@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
 from docseek.core.interfaces import Embedder, LLMClient, Reranker
 from docseek.core.models import LLMResponse, ScoredHit, ToolCall
@@ -91,12 +91,15 @@ class TestScriptedLLM:
             llm.complete([])
 
     def test_structured_output_is_validated(self) -> None:
-        llm = ScriptedLLM(replies=['{"score": 2, "reason": "direct"}', '{"score": "high"}'])
+        llm = ScriptedLLM(
+            replies=['{"score": 2, "reason": "direct"}', '{"score": "high"}', "not json"]
+        )
 
         ok = llm.complete([], response_format=Verdict)
         assert ok.parsed == {"score": 2, "reason": "direct"}
-        with pytest.raises(ValidationError):
-            llm.complete([], response_format=Verdict)
+        # Invalid replies stay unparsed, like LiteLLMClient; CachedLLMClient raises on them.
+        assert llm.complete([], response_format=Verdict).parsed is None
+        assert llm.complete([], response_format=Verdict).parsed is None
 
     def test_tool_calls_pass_through(self) -> None:
         call = ToolCall(id="1", name="search", arguments={"query": "cors"})

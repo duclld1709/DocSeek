@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     llm_cache_path: Path = Field(default=Path(".cache/llm.sqlite"), alias="DOCSEEK_LLM_CACHE")
     budget_usd: float = Field(default=5.0, gt=0, alias="DOCSEEK_BUDGET_USD")
     configs_dir: Path = Field(default=Path("configs"), alias="DOCSEEK_CONFIGS_DIR")
+    experiments_dir: Path = Field(default=Path("experiments"), alias="DOCSEEK_EXPERIMENTS_DIR")
 
     def api_key_status(self) -> dict[str, bool]:
         """Whether each provider key is set. Never exposes the values themselves."""

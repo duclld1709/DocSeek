@@ -9,7 +9,7 @@ from rich.console import Console
 from rich.table import Table
 
 from docseek import __version__, doctor
-from docseek.core.config import Settings, load_corpus_config
+from docseek.core.config import Settings, load_corpus_config, load_models_config, load_principals
 from docseek.core.logging import configure_logging
 from docseek.data.fetch import FetchError, fetch_fastapi_docs
 
@@ -83,3 +83,68 @@ def data_fetch(
     action = "cloned" if result.cloned else "already at pinned commit"
     console.print(f"{corpus.fastapi.dest}: {action} ({m.commit[:12]}, {m.commit_date})")
     console.print(f"{m.file_count} files: {m.counts_by_extension} -> {corpus.manifest_path}")
+
+
+@data_app.command("gen-internal")
+def data_gen_internal(
+    force: Annotated[bool, typer.Option(help="Regenerate docs that already exist.")] = False,
+    only: Annotated[
+        list[str] | None, typer.Option(help="Only these KB ids (repeatable), e.g. kb-0001.")
+    ] = None,
+    workers: Annotated[int, typer.Option(min=1, max=16, help="Parallel LLM calls.")] = 4,
+) -> None:
+    """Generate Corpus B (Acme internal KB) from configs/internal_kb_plan.yaml."""
+    from docseek.core.runs import environment_info, make_run_dir, write_json
+    from docseek.core.tracing import JsonlTraceSink, Tracer, read_traces, summarize_llm_costs
+    from docseek.data.gen_internal import KBPlan, generate_internal_kb, load_plan
+    from docseek.ingest.internal_kb import KBValidationError, load_kb
+    from docseek.llm.client import build_llm_client
+
+    settings = Settings()
+    corpus = load_corpus_config(settings.configs_dir)
+    role = load_models_config(settings.configs_dir).llm.generator
+    plan = load_plan(settings.configs_dir / "internal_kb_plan.yaml")
+    if only:
+        unknown = set(only) - {d.id for d in plan.docs}
+        if unknown:
+            console.print(f"[red]unknown KB ids:[/red] {sorted(unknown)}")
+            raise typer.Exit(code=1)
+        plan = KBPlan(company=plan.company, docs=[d for d in plan.docs if d.id in only])
+    run_dir = make_run_dir(settings.experiments_dir, "gen-internal")
+    traces = run_dir / "traces.jsonl"
+    llm = build_llm_client(settings, Tracer(JsonlTraceSink(traces)))
+    out_dir = corpus.internal_kb.dir
+    results = generate_internal_kb(
+        plan, llm=llm, role=role, out_dir=out_dir, force=force, workers=workers
+    )
+    events = read_traces(traces) if traces.exists() else []
+    cost = summarize_llm_costs(events)
+    write_json(run_dir / "report.json", {"results": [r.__dict__ for r in results]})
+    write_json(
+        run_dir / "env.json",
+        environment_info(command="data gen-internal", model=role.model, cost=cost.__dict__),
+    )
+    table = Table(title="gen-internal")
+    for col in ("id", "status", "attempts", "problems"):
+        table.add_column(col, overflow="fold")
+    for r in results:
+        table.add_row(r.id, r.status, str(r.attempts), "; ".join(r.problems))
+    console.print(table)
+    console.print(
+        f"LLM calls: {cost.llm_calls} ({cost.cached_calls} cached), "
+        f"tokens in/out {cost.tokens_in}/{cost.tokens_out}, spent ${cost.cost_usd:.4f} "
+        f"-> {run_dir}"
+    )
+    failed = [r.id for r in results if r.status == "failed"]
+    if failed:
+        console.print(f"[red]failed:[/red] {failed}")
+        raise typer.Exit(code=1)
+    try:
+        docs = load_kb(out_dir, corpus.internal_kb, load_principals(settings.configs_dir))
+    except KBValidationError as exc:
+        if only:  # a partial KB may legitimately reference docs not generated yet
+            console.print(f"[yellow]partial KB not validated:[/yellow] {exc}")
+            return
+        console.print(f"[red]KB validation failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(f"{len(docs)} KB docs valid in {out_dir}")
