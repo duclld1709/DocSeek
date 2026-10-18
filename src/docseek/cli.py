@@ -9,8 +9,9 @@ from rich.console import Console
 from rich.table import Table
 
 from docseek import __version__, doctor
-from docseek.core.config import Settings
+from docseek.core.config import Settings, load_corpus_config
 from docseek.core.logging import configure_logging
+from docseek.data.fetch import FetchError, fetch_fastapi_docs
 
 app = typer.Typer(
     name="docseek",
@@ -18,6 +19,8 @@ app = typer.Typer(
     no_args_is_help=True,
     add_completion=False,
 )
+data_app = typer.Typer(help="Fetch and generate corpora.", no_args_is_help=True)
+app.add_typer(data_app, name="data")
 
 console = Console()
 
@@ -63,3 +66,20 @@ def doctor_cmd(
     if not doctor.is_healthy(results, strict=strict):
         console.print("[red]Some required checks failed.[/red] Is `docker compose up -d` running?")
         raise typer.Exit(code=1)
+
+
+@data_app.command("fetch")
+def data_fetch(
+    force: Annotated[bool, typer.Option(help="Re-clone even if already pinned.")] = False,
+) -> None:
+    """Sparse-clone FastAPI docs at the pinned commit and write data/raw/MANIFEST.json."""
+    corpus = load_corpus_config(Settings().configs_dir)
+    try:
+        result = fetch_fastapi_docs(corpus.fastapi, corpus.manifest_path, force=force)
+    except FetchError as exc:
+        console.print(f"[red]fetch failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    m = result.manifest
+    action = "cloned" if result.cloned else "already at pinned commit"
+    console.print(f"{corpus.fastapi.dest}: {action} ({m.commit[:12]}, {m.commit_date})")
+    console.print(f"{m.file_count} files: {m.counts_by_extension} -> {corpus.manifest_path}")
