@@ -231,3 +231,14 @@ def test_build_llm_client_wires_settings(tmp_path: Path) -> None:
     client.complete(MSG, model=OPENAI)
     assert seen[0]["api_key"] == "g" and "api_key" not in seen[1]  # blank key is "not set"
     assert (tmp_path / "c.sqlite").is_file()
+
+
+def test_litellm_retries_work_offline() -> None:
+    """Regression: LiteLLM's retry path imports tenacity; a 503 must surface as the
+    provider error after retrying, not as an ImportError (seen in the first synth run)."""
+    error = litellm.InternalServerError(message="503", llm_provider="gemini", model="m")
+    client = LiteLLMClient(
+        num_retries=1, completion=functools.partial(litellm.completion, mock_response=error)
+    )
+    with pytest.raises(litellm.InternalServerError):
+        client.complete(MSG, model=GEMINI)

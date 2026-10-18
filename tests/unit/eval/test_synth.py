@@ -19,6 +19,7 @@ from docseek.eval.golden import validate_against_corpus
 from docseek.eval.judge import RelevanceJudge
 from docseek.eval.synth import (
     Candidate,
+    GeneratedQuery,
     SynthConfig,
     SynthContext,
     balance,
@@ -307,3 +308,17 @@ def test_multihop_pairs_cross_pages() -> None:
     pairs = multihop_pairs(ctx)
     assert pairs and all(a.doc_id != b.doc_id for a, b in pairs)
     assert any(a.source == "internal-kb" and b.source == "fastapi-docs" for a, b in pairs)
+
+
+def test_generator_api_errors_are_counted_not_fatal() -> None:
+    ctx, _ = _ctx()
+
+    class Failing:
+        def complete(self, *a: Any, **k: Any) -> LLMResponse:
+            raise RuntimeError("503 from provider")
+
+    ctx.llm = CachedLLMClient(
+        Failing(), SQLiteLLMCache(Path(":memory:")), BudgetGuard(1), Tracer(MemoryTraceSink())
+    )
+    assert ctx.generate("prompt", GeneratedQuery, "synth.x") is None
+    assert ctx.stats["api_error:RuntimeError"] == 1

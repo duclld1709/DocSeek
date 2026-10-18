@@ -37,6 +37,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from docseek.core.acl import AccessPolicy
 from docseek.core.config import LLMRoleConfig, PrincipalsConfig
 from docseek.core.interfaces import Embedder
+from docseek.core.logging import get_logger
 from docseek.core.models import QueryType, Section
 from docseek.core.tracing import trace_scope
 from docseek.data.gen_internal import KBPlan, key_terms
@@ -44,6 +45,7 @@ from docseek.eval.golden import GoldenQuery, assign_splits
 from docseek.eval.judge import RelevanceJudge, render_section
 from docseek.ingest.markdown_parser import FenceTracker
 from docseek.llm.client import CachedLLMClient, StructuredOutputError
+from docseek.llm.cost import BudgetExceededError
 
 SINGLE_TYPES = (QueryType.FACTOID, QueryType.HOWTO, QueryType.CONCEPTUAL, QueryType.SYMBOL)
 STYLES = ("human", "machine", "paraphrase")
@@ -54,6 +56,7 @@ _STOPWORD_TEXT = (
     "which can you your it this that from at as use using get set should"
 )
 STOPWORDS = frozenset(_STOPWORD_TEXT.split())
+log = get_logger(__name__)
 
 
 class SynthConfig(BaseModel):
@@ -273,6 +276,13 @@ class SynthContext:
             )
         except StructuredOutputError:
             self.stats["invalid_json"] += 1
+            return None
+        except BudgetExceededError:
+            raise
+        except Exception as exc:  # provider still failing after LiteLLM's retries (5xx, 429)
+            # One lost candidate must not sink a 30-minute run; a rerun retries it (no cache).
+            self.stats[f"api_error:{type(exc).__name__}"] += 1
+            log.warning("synth.api_error", name=name, error=str(exc)[:200])
             return None
         return resp.parsed
 
