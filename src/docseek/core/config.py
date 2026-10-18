@@ -191,6 +191,8 @@ class ModelsConfig(_YamlModel):
     spend_limits_usd: dict[str, float] = Field(default_factory=dict)
     # Local OCR model files (Hugging Face repo + file), e.g. the RapidOCR English recogniser.
     ocr: dict[str, dict[str, str]] = Field(default_factory=dict)
+    # CLIP towers for text-to-image retrieval (M7): {"image": ..., "text": ...}.
+    image_embedding: dict[str, str] = Field(default_factory=dict)
 
     def model_params(self) -> dict[str, dict[str, object]]:
         """Extra LiteLLM kwargs per model name (same model in two roles must agree)."""

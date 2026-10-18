@@ -51,3 +51,8 @@ reranker:
 # English PP-OCRv3 recogniser comes from the RapidOCR model repo on the Hugging Face Hub.
 ocr:
   rapidocr_rec: { repo: "SWHL/RapidOCR", file: "PP-OCRv3/en_PP-OCRv3_rec_infer.onnx" }
+
+# Text-to-image retrieval (M7): CLIP ViT-B/32, both towers via fastembed (ONNX).
+image_embedding:
+  image: "Qdrant/clip-ViT-B-32-vision"
+  text: "Qdrant/clip-ViT-B-32-text"

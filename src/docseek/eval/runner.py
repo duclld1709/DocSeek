@@ -252,6 +252,18 @@ def _graph(
     return build_graph_retriever(cfg.model_dump(exclude={"type"}), chunks, policy)
 
 
+def _clip(
+    cfg: RetrieverConfig,
+    chunks: list[Chunk],
+    _g: list[GoldenQuery],
+    policy: AccessPolicy,
+    _seed: int,
+) -> Retriever:
+    from docseek.dense.image_retriever import build_image_retriever
+
+    return build_image_retriever(cfg.model_dump(exclude={"type"}), chunks, policy)
+
+
 def _pipeline(kind: str) -> RetrieverFactory:
     def factory(
         cfg: RetrieverConfig,
@@ -278,6 +290,7 @@ RETRIEVERS: dict[str, RetrieverFactory] = {
     "rerank": _rerank,
     "qdrant_hybrid": _qdrant_hybrid,
     "graph": _graph,
+    "clip": _clip,
     **{kind: _pipeline(kind) for kind in ("freshness", "expand", "filtered", "router")},
 }
 

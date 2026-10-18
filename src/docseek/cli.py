@@ -296,6 +296,89 @@ def data_make_scans(
     console.print(f"{len(m['scans'])} scans, {pages} pages -> {out}")
 
 
+@data_app.command("images")
+def data_images(
+    repo_root: Annotated[Path, typer.Option(help="FastAPI checkout.")] = Path("data/raw/fastapi"),
+    base_chunks: Annotated[Path, typer.Option(help="Text chunks to extend.")] = Path(
+        "data/processed/chunks_section_ctx.jsonl"
+    ),
+    limit: Annotated[int, typer.Option(help="Max images.")] = 150,
+    ocr: Annotated[str, typer.Option(help="OCR engine: tesseract|rapidocr|none.")] = "tesseract",
+    captions: Annotated[bool, typer.Option(help="Vision-LLM captions (cached).")] = True,
+) -> None:
+    """Images in the docs -> image chunks (alt + caption + OCR text), appended to text chunks."""
+    import io
+    import json
+
+    from PIL import Image
+
+    from docseek.core.models import Chunk, Section
+    from docseek.core.runs import environment_info, make_run_dir, write_json
+    from docseek.core.tracing import JsonlTraceSink, Tracer, read_traces, trace_scope
+    from docseek.ingest.images import caption_messages, find_image_refs, image_chunks
+    from docseek.ingest.ocr import OcrEngine, RapidOcrEngine, TesseractEngine
+    from docseek.ingest.pipeline import read_jsonl, write_jsonl
+    from docseek.llm.client import build_llm_client
+
+    settings = Settings()
+    sections = read_jsonl(Path("data/processed/sections.jsonl"), Section)
+    refs = find_image_refs(sections, repo_root, limit=limit)
+    run = make_run_dir(Path("experiments"), "m7_images")
+    tracer = Tracer(JsonlTraceSink(run / "traces.jsonl"))
+    llm = build_llm_client(settings, tracer)
+    role = load_models_config(settings.configs_dir).llm.vision
+    engine: OcrEngine | None = {"tesseract": TesseractEngine, "rapidocr": RapidOcrEngine}.get(
+        ocr, lambda: None
+    )()
+    caps: dict[str, str] = {}
+    texts: dict[str, str] = {}
+    for i, ref in enumerate(refs, start=1):
+        img = Image.open(repo_root / ref.path).convert("RGB")
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        png = buf.getvalue()
+        if engine is not None:
+            texts[ref.image_id] = engine.ocr(png)
+        if captions:
+            with trace_scope():
+                resp = llm.complete(
+                    caption_messages(png, ref.alt),
+                    model=role.model,
+                    temperature=0.0,
+                    name="image.caption",
+                )
+            caps[ref.image_id] = resp.content or ""
+        console.print(f"[{i}/{len(refs)}] {ref.path}", highlight=False)
+    by_id = {s.section_id: s for s in sections}
+    chunks = image_chunks(refs, by_id, caps, texts)
+    out = base_chunks.with_name(base_chunks.stem + "_images.jsonl")
+    write_jsonl(out, [*read_jsonl(base_chunks, Chunk), *chunks])
+    with (Path("data/processed") / "images.jsonl").open("w", encoding="utf-8", newline="\n") as fh:
+        for ref in refs:
+            row = {
+                **ref.__dict__,
+                "caption": caps.get(ref.image_id, ""),
+                "ocr_text": texts.get(ref.image_id, ""),
+            }
+            fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+    events = read_traces(run / "traces.jsonl") if (run / "traces.jsonl").exists() else []
+    calls = [e for e in events if e.kind == "llm_call"]
+    write_json(
+        run / "report.json",
+        {
+            "images": len(refs),
+            "sections": len({r.section_id for r in refs}),
+            "ocr": ocr,
+            "llm_calls": len(calls),
+            "cache_hits": sum(1 for e in calls if e.output.get("cached")),
+            "cost_usd": sum(e.cost_usd for e in calls),
+            "list_price_usd": sum(e.output.get("original_cost_usd", e.cost_usd) for e in calls),
+        },
+    )
+    write_json(run / "env.json", environment_info(command="docseek data images", model=role.model))
+    console.print(f"{len(chunks)} image chunks -> {out} (run {run})")
+
+
 @data_app.command("gen-internal")
 def data_gen_internal(
     force: Annotated[bool, typer.Option(help="Regenerate docs that already exist.")] = False,

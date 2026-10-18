@@ -72,6 +72,7 @@ class QdrantStore:
         on_disk: bool = False,
         quantization: models.QuantizationConfig | None = None,
         hnsw_ef_construct: int | None = None,
+        vector_name: str = DENSE,
     ) -> None:
         self.client = client
         self.collection = collection
@@ -80,6 +81,7 @@ class QdrantStore:
         self._on_disk = on_disk
         self._quantization = quantization
         self._hnsw_ef_construct = hnsw_ef_construct
+        self.vector_name = vector_name
 
     def ensure_collection(self) -> bool:
         """Create the collection and payload indexes if missing; True if it was created."""
@@ -93,7 +95,7 @@ class QdrantStore:
         self.client.create_collection(
             self.collection,
             vectors_config={
-                DENSE: models.VectorParams(
+                self.vector_name: models.VectorParams(
                     size=self.dim, distance=self.distance, on_disk=self._on_disk
                 )
             },
@@ -120,7 +122,7 @@ class QdrantStore:
             points = [
                 models.PointStruct(
                     id=point_id(c.chunk_id),
-                    vector={DENSE: v.tolist()},
+                    vector={self.vector_name: v.tolist()},
                     payload={**c.metadata, "chunk_id": c.chunk_id, "section_id": c.section_id},
                 )
                 for c, v in part
@@ -142,7 +144,7 @@ class QdrantStore:
         res = self.client.query_points(
             self.collection,
             query=vector.tolist(),
-            using=DENSE,
+            using=self.vector_name,
             query_filter=to_qdrant_filter(groups, flt),
             limit=k,
             with_payload=["chunk_id", "section_id"],
