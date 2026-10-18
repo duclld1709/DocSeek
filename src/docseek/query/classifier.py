@@ -11,11 +11,12 @@ import re
 from dataclasses import dataclass
 from typing import Literal
 
+import structlog
 from pydantic import BaseModel
 
 from docseek.core.config import LLMRoleConfig
 from docseek.core.models import QueryType
-from docseek.llm.client import CachedLLMClient, StructuredOutputError
+from docseek.llm.client import CachedLLMClient, is_degradable
 
 # Types the classifier may output. scan/image/permission depend on corpus or principal, not
 # on the wording, so they are not predicted from text in M5.
@@ -30,6 +31,8 @@ _FRESH = re.compile(
     re.IGNORECASE,
 )
 _HOWTO = re.compile(r"^\s*(how (do|can|should) (i|we|you)|how to)\b", re.IGNORECASE)
+
+log = structlog.get_logger(__name__)
 
 
 class QueryTypeLabel(BaseModel):
@@ -92,7 +95,10 @@ class QueryClassifier:
                 response_format=QueryTypeLabel,
                 name="query.classify",
             )
-        except StructuredOutputError:
+        except Exception as exc:  # degrade on bad output or provider errors (§7)
+            if not is_degradable(exc):
+                raise
+            log.warning("llm_degraded", step="classifier", error=type(exc).__name__)
             return Classification(QueryType.FACTOID, "fallback")
         assert resp.parsed is not None
         return Classification(QueryType(resp.parsed["qtype"]), "llm")

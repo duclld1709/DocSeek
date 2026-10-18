@@ -41,3 +41,24 @@ def test_llm_path_and_fallbacks(tmp_path: Path) -> None:
     assert (bad.qtype, bad.source) == (QueryType.FACTOID, "fallback")
     offline = QueryClassifier(None, None).classify("how do I add CORS")
     assert (offline.qtype, offline.source) == (QueryType.HOWTO, "fallback")
+
+
+def test_provider_errors_degrade_but_budget_stops(tmp_path: Path) -> None:
+    from docseek.core.models import LLMResponse
+    from docseek.llm.cost import BudgetExceededError
+
+    class Flaky:
+        def complete(self, *a: object, **k: object) -> LLMResponse:
+            raise TimeoutError("provider timeout")
+
+    llm = CachedLLMClient(Flaky(), SQLiteLLMCache(tmp_path / "a.sqlite"), BudgetGuard(1.0))  # type: ignore[arg-type]
+    out = QueryClassifier(llm, LLMRoleConfig(model="gemini/x")).classify("why use async def")
+    assert out.source == "fallback"
+    paid = LLMResponse(content='{"qtype": "howto"}', model="gemini/x", cost_usd=2.0)
+    spent = CachedLLMClient(
+        ScriptedLLM([paid, paid]), SQLiteLLMCache(tmp_path / "b.sqlite"), BudgetGuard(1.0)
+    )
+    clf = QueryClassifier(spent, LLMRoleConfig(model="gemini/x"))
+    clf.classify("first question here")  # spends 2.0 > 1.0
+    with pytest.raises(BudgetExceededError):
+        clf.classify("second question here")

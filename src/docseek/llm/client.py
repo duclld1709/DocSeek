@@ -337,3 +337,13 @@ def build_llm_client(
         spend_limits=models.spend_limits_usd,
         model_params=params,
     )
+
+
+def is_degradable(exc: BaseException) -> bool:
+    """True for LLM failures the pipeline may degrade around (bad JSON, provider/API errors).
+
+    Budget and spend-limit stops are never degradable: they must halt the run.
+    """
+    from docseek.llm.cost import BudgetExceededError
+
+    return not isinstance(exc, BudgetExceededError) and isinstance(exc, Exception)
