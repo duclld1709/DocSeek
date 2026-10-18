@@ -18,10 +18,11 @@ llm:
     { model: "gemini/gemini-3.5-flash-lite", temperature: 0.0, reasoning_effort: "none", rpm: 10 }
 
 # Hard cap on cumulative spend per provider over the whole project (spend ledger in the LLM
-# cache). OpenAI is pay-as-you-go with $2 left for M1-M8; Gemini is the free tier (its costs
-# are LiteLLM list prices, recorded but not charged).
+# cache). OpenAI is pay-as-you-go: $2 for M1-M8 at first; after M4 the owner reported about $1
+# left, so the cap is the ledger at that point ($0.933) + $0.95. Gemini is the free tier (its
+# costs are LiteLLM list prices, recorded but not charged); Ollama models cost nothing.
 spend_limits_usd:
-  openai: 2.0
+  openai: 1.88
 
 # fastembed applies no query/passage prefixes; these follow each model card (M3).
 # On the dev laptop CPU a 33M-param encoder takes ~0.6 s per 400-token chunk, so M3 compares

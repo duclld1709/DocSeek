@@ -121,6 +121,8 @@ class LLMRoleConfig(_YamlModel):
     reasoning_effort: str | None = None
     # Client-side cap on requests per minute (free tiers rate-limit hard); None = no cap.
     rpm: int | None = Field(default=None, gt=0)
+    # Server URL for self-hosted models (Ollama); passed to LiteLLM as ``api_base``.
+    api_base: str | None = None
 
     @property
     def provider(self) -> str:
@@ -195,6 +197,8 @@ class ModelsConfig(_YamlModel):
             params: dict[str, object] = {}
             if role.reasoning_effort is not None:
                 params["reasoning_effort"] = role.reasoning_effort
+            if role.api_base is not None:
+                params["api_base"] = role.api_base
             if out.setdefault(role.model, params) != params:
                 raise ValueError(f"roles using {role.model} disagree on extra parameters")
         return out

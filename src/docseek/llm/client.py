@@ -177,9 +177,14 @@ class RateLimiter:
             self._sleep(start - now)
 
 
+LOCAL_PROVIDERS = ("ollama", "ollama_chat")
+
+
 def _cost(resp: Any, model: str) -> float:
     import litellm
 
+    if model.split("/", 1)[0] in LOCAL_PROVIDERS:
+        return 0.0  # runs on the local GPU
     try:
         return float(litellm.completion_cost(completion_response=resp, model=model))
     except Exception as exc:  # unknown price must not crash a run; it is logged loudly
