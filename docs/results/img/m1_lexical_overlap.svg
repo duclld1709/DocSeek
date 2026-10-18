@@ -1,53 +1,53 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 874 242" width="874" height="242" role="img" aria-label="Lexical overlap by query style (golden_v1.draft.jsonl)">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 874 242" width="874" height="242" role="img" aria-label="Lexical overlap by query style (golden_v1.jsonl)">
 <style>:root{--surface:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--grid:#e4e3df;--bar:#2a78d6}@media (prefers-color-scheme: dark){:root{--surface:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--grid:#3a3936;--bar:#3987e5}}text{font-family:system-ui,-apple-system,Segoe UI,sans-serif;fill:var(--ink2);font-size:11px}.t{fill:var(--ink);font-size:14px;font-weight:600}.p{fill:var(--ink);font-size:12px;font-weight:600}</style>
 <rect width="874" height="242" fill="var(--surface)"/>
-<text class="t" x="34" y="20">Lexical overlap by query style (golden_v1.draft.jsonl)</text>
-<text class="p" x="34" y="40">human (n=70)</text>
+<text class="t" x="34" y="20">Lexical overlap by query style (golden_v1.jsonl)</text>
+<text class="p" x="34" y="40">human (n=69)</text>
 <line x1="34" x2="294" y1="202.0" y2="202.0" stroke="var(--grid)" stroke-width="1"/>
 <text x="28" y="206.0" text-anchor="end">0</text>
-<line x1="34" x2="294" y1="130.0" y2="130.0" stroke="var(--grid)" stroke-width="1"/>
-<text x="28" y="134.0" text-anchor="end">12</text>
+<line x1="34" x2="294" y1="127.0" y2="127.0" stroke="var(--grid)" stroke-width="1"/>
+<text x="28" y="131.0" text-anchor="end">12</text>
 <line x1="34" x2="294" y1="52.0" y2="52.0" stroke="var(--grid)" stroke-width="1"/>
-<text x="28" y="56.0" text-anchor="end">25</text>
-<path d="M34.0,202 V188.0 Q34.0,184.0 38.0,184.0 H54.2 Q58.2,184.0 58.2,188.0 V202 Z" fill="var(--bar)"><title>human, overlap 0.0-0.1: 3</title></path>
-<path d="M86.4,202 V194.0 Q86.4,190.0 90.4,190.0 H106.6 Q110.6,190.0 110.6,194.0 V202 Z" fill="var(--bar)"><title>human, overlap 0.2-0.3: 2</title></path>
-<path d="M112.6,202 V188.0 Q112.6,184.0 116.6,184.0 H132.8 Q136.8,184.0 136.8,188.0 V202 Z" fill="var(--bar)"><title>human, overlap 0.3-0.4: 3</title></path>
-<path d="M138.8,202 V188.0 Q138.8,184.0 142.8,184.0 H159.0 Q163.0,184.0 163.0,188.0 V202 Z" fill="var(--bar)"><title>human, overlap 0.4-0.5: 3</title></path>
-<path d="M165.0,202 V152.0 Q165.0,148.0 169.0,148.0 H185.2 Q189.2,148.0 189.2,152.0 V202 Z" fill="var(--bar)"><title>human, overlap 0.5-0.6: 9</title></path>
-<path d="M191.2,202 V146.0 Q191.2,142.0 195.2,142.0 H211.4 Q215.4,142.0 215.4,146.0 V202 Z" fill="var(--bar)"><title>human, overlap 0.6-0.7: 10</title></path>
-<path d="M217.4,202 V140.0 Q217.4,136.0 221.4,136.0 H237.6 Q241.6,136.0 241.6,140.0 V202 Z" fill="var(--bar)"><title>human, overlap 0.7-0.8: 11</title></path>
-<path d="M243.6,202 V182.0 Q243.6,178.0 247.6,178.0 H263.8 Q267.8,178.0 267.8,182.0 V202 Z" fill="var(--bar)"><title>human, overlap 0.8-0.9: 4</title></path>
-<path d="M269.8,202 V56.0 Q269.8,52.0 273.8,52.0 H290.0 Q294.0,52.0 294.0,56.0 V202 Z" fill="var(--bar)"><title>human, overlap 0.9-1.0: 25</title></path>
+<text x="28" y="56.0" text-anchor="end">24</text>
+<path d="M34.0,202 V187.2 Q34.0,183.2 38.0,183.2 H54.2 Q58.2,183.2 58.2,187.2 V202 Z" fill="var(--bar)"><title>human, overlap 0.0-0.1: 3</title></path>
+<path d="M86.4,202 V193.5 Q86.4,189.5 90.4,189.5 H106.6 Q110.6,189.5 110.6,193.5 V202 Z" fill="var(--bar)"><title>human, overlap 0.2-0.3: 2</title></path>
+<path d="M112.6,202 V193.5 Q112.6,189.5 116.6,189.5 H132.8 Q136.8,189.5 136.8,193.5 V202 Z" fill="var(--bar)"><title>human, overlap 0.3-0.4: 2</title></path>
+<path d="M138.8,202 V187.2 Q138.8,183.2 142.8,183.2 H159.0 Q163.0,183.2 163.0,187.2 V202 Z" fill="var(--bar)"><title>human, overlap 0.4-0.5: 3</title></path>
+<path d="M165.0,202 V143.5 Q165.0,139.5 169.0,139.5 H185.2 Q189.2,139.5 189.2,143.5 V202 Z" fill="var(--bar)"><title>human, overlap 0.5-0.6: 10</title></path>
+<path d="M191.2,202 V143.5 Q191.2,139.5 195.2,139.5 H211.4 Q215.4,139.5 215.4,143.5 V202 Z" fill="var(--bar)"><title>human, overlap 0.6-0.7: 10</title></path>
+<path d="M217.4,202 V137.2 Q217.4,133.2 221.4,133.2 H237.6 Q241.6,133.2 241.6,137.2 V202 Z" fill="var(--bar)"><title>human, overlap 0.7-0.8: 11</title></path>
+<path d="M243.6,202 V181.0 Q243.6,177.0 247.6,177.0 H263.8 Q267.8,177.0 267.8,181.0 V202 Z" fill="var(--bar)"><title>human, overlap 0.8-0.9: 4</title></path>
+<path d="M269.8,202 V56.0 Q269.8,52.0 273.8,52.0 H290.0 Q294.0,52.0 294.0,56.0 V202 Z" fill="var(--bar)"><title>human, overlap 0.9-1.0: 24</title></path>
 <text x="34.0" y="218" text-anchor="middle">0</text>
 <text x="164.0" y="218" text-anchor="middle">0.5</text>
 <text x="294.0" y="218" text-anchor="middle">1</text>
 <text class="p" x="318" y="40">machine (n=68)</text>
 <line x1="318" x2="578" y1="202.0" y2="202.0" stroke="var(--grid)" stroke-width="1"/>
-<line x1="318" x2="578" y1="130.0" y2="130.0" stroke="var(--grid)" stroke-width="1"/>
+<line x1="318" x2="578" y1="127.0" y2="127.0" stroke="var(--grid)" stroke-width="1"/>
 <line x1="318" x2="578" y1="52.0" y2="52.0" stroke="var(--grid)" stroke-width="1"/>
-<path d="M370.4,202 V199.0 Q370.4,196.0 373.4,196.0 H391.6 Q394.6,196.0 394.6,199.0 V202 Z" fill="var(--bar)"><title>machine, overlap 0.2-0.3: 1</title></path>
-<path d="M396.6,202 V176.0 Q396.6,172.0 400.6,172.0 H416.8 Q420.8,172.0 420.8,176.0 V202 Z" fill="var(--bar)"><title>machine, overlap 0.3-0.4: 5</title></path>
-<path d="M422.8,202 V188.0 Q422.8,184.0 426.8,184.0 H443.0 Q447.0,184.0 447.0,188.0 V202 Z" fill="var(--bar)"><title>machine, overlap 0.4-0.5: 3</title></path>
-<path d="M449.0,202 V134.0 Q449.0,130.0 453.0,130.0 H469.2 Q473.2,130.0 473.2,134.0 V202 Z" fill="var(--bar)"><title>machine, overlap 0.5-0.6: 12</title></path>
-<path d="M475.2,202 V116.0 Q475.2,112.0 479.2,112.0 H495.4 Q499.4,112.0 499.4,116.0 V202 Z" fill="var(--bar)"><title>machine, overlap 0.6-0.7: 15</title></path>
-<path d="M501.4,202 V152.0 Q501.4,148.0 505.4,148.0 H521.6 Q525.6,148.0 525.6,152.0 V202 Z" fill="var(--bar)"><title>machine, overlap 0.7-0.8: 9</title></path>
-<path d="M527.6,202 V134.0 Q527.6,130.0 531.6,130.0 H547.8 Q551.8,130.0 551.8,134.0 V202 Z" fill="var(--bar)"><title>machine, overlap 0.8-0.9: 12</title></path>
-<path d="M553.8,202 V140.0 Q553.8,136.0 557.8,136.0 H574.0 Q578.0,136.0 578.0,140.0 V202 Z" fill="var(--bar)"><title>machine, overlap 0.9-1.0: 11</title></path>
+<path d="M370.4,202 V198.9 Q370.4,195.8 373.5,195.8 H391.5 Q394.6,195.8 394.6,198.9 V202 Z" fill="var(--bar)"><title>machine, overlap 0.2-0.3: 1</title></path>
+<path d="M396.6,202 V174.8 Q396.6,170.8 400.6,170.8 H416.8 Q420.8,170.8 420.8,174.8 V202 Z" fill="var(--bar)"><title>machine, overlap 0.3-0.4: 5</title></path>
+<path d="M422.8,202 V187.2 Q422.8,183.2 426.8,183.2 H443.0 Q447.0,183.2 447.0,187.2 V202 Z" fill="var(--bar)"><title>machine, overlap 0.4-0.5: 3</title></path>
+<path d="M449.0,202 V131.0 Q449.0,127.0 453.0,127.0 H469.2 Q473.2,127.0 473.2,131.0 V202 Z" fill="var(--bar)"><title>machine, overlap 0.5-0.6: 12</title></path>
+<path d="M475.2,202 V112.2 Q475.2,108.2 479.2,108.2 H495.4 Q499.4,108.2 499.4,112.2 V202 Z" fill="var(--bar)"><title>machine, overlap 0.6-0.7: 15</title></path>
+<path d="M501.4,202 V149.8 Q501.4,145.8 505.4,145.8 H521.6 Q525.6,145.8 525.6,149.8 V202 Z" fill="var(--bar)"><title>machine, overlap 0.7-0.8: 9</title></path>
+<path d="M527.6,202 V131.0 Q527.6,127.0 531.6,127.0 H547.8 Q551.8,127.0 551.8,131.0 V202 Z" fill="var(--bar)"><title>machine, overlap 0.8-0.9: 12</title></path>
+<path d="M553.8,202 V137.2 Q553.8,133.2 557.8,133.2 H574.0 Q578.0,133.2 578.0,137.2 V202 Z" fill="var(--bar)"><title>machine, overlap 0.9-1.0: 11</title></path>
 <text x="318.0" y="218" text-anchor="middle">0</text>
 <text x="448.0" y="218" text-anchor="middle">0.5</text>
 <text x="578.0" y="218" text-anchor="middle">1</text>
 <text class="p" x="602" y="40">paraphrase (n=45)</text>
 <line x1="602" x2="862" y1="202.0" y2="202.0" stroke="var(--grid)" stroke-width="1"/>
-<line x1="602" x2="862" y1="130.0" y2="130.0" stroke="var(--grid)" stroke-width="1"/>
+<line x1="602" x2="862" y1="127.0" y2="127.0" stroke="var(--grid)" stroke-width="1"/>
 <line x1="602" x2="862" y1="52.0" y2="52.0" stroke="var(--grid)" stroke-width="1"/>
-<path d="M602.0,202 V188.0 Q602.0,184.0 606.0,184.0 H622.2 Q626.2,184.0 626.2,188.0 V202 Z" fill="var(--bar)"><title>paraphrase, overlap 0.0-0.1: 3</title></path>
-<path d="M628.2,202 V176.0 Q628.2,172.0 632.2,172.0 H648.4 Q652.4,172.0 652.4,176.0 V202 Z" fill="var(--bar)"><title>paraphrase, overlap 0.1-0.2: 5</title></path>
-<path d="M654.4,202 V140.0 Q654.4,136.0 658.4,136.0 H674.6 Q678.6,136.0 678.6,140.0 V202 Z" fill="var(--bar)"><title>paraphrase, overlap 0.2-0.3: 11</title></path>
-<path d="M680.6,202 V116.0 Q680.6,112.0 684.6,112.0 H700.8 Q704.8,112.0 704.8,116.0 V202 Z" fill="var(--bar)"><title>paraphrase, overlap 0.3-0.4: 15</title></path>
-<path d="M706.8,202 V194.0 Q706.8,190.0 710.8,190.0 H727.0 Q731.0,190.0 731.0,194.0 V202 Z" fill="var(--bar)"><title>paraphrase, overlap 0.4-0.5: 2</title></path>
-<path d="M733.0,202 V164.0 Q733.0,160.0 737.0,160.0 H753.2 Q757.2,160.0 757.2,164.0 V202 Z" fill="var(--bar)"><title>paraphrase, overlap 0.5-0.6: 7</title></path>
-<path d="M759.2,202 V199.0 Q759.2,196.0 762.2,196.0 H780.4 Q783.4,196.0 783.4,199.0 V202 Z" fill="var(--bar)"><title>paraphrase, overlap 0.6-0.7: 1</title></path>
-<path d="M811.6,202 V199.0 Q811.6,196.0 814.6,196.0 H832.8 Q835.8,196.0 835.8,199.0 V202 Z" fill="var(--bar)"><title>paraphrase, overlap 0.8-0.9: 1</title></path>
+<path d="M602.0,202 V187.2 Q602.0,183.2 606.0,183.2 H622.2 Q626.2,183.2 626.2,187.2 V202 Z" fill="var(--bar)"><title>paraphrase, overlap 0.0-0.1: 3</title></path>
+<path d="M628.2,202 V174.8 Q628.2,170.8 632.2,170.8 H648.4 Q652.4,170.8 652.4,174.8 V202 Z" fill="var(--bar)"><title>paraphrase, overlap 0.1-0.2: 5</title></path>
+<path d="M654.4,202 V137.2 Q654.4,133.2 658.4,133.2 H674.6 Q678.6,133.2 678.6,137.2 V202 Z" fill="var(--bar)"><title>paraphrase, overlap 0.2-0.3: 11</title></path>
+<path d="M680.6,202 V112.2 Q680.6,108.2 684.6,108.2 H700.8 Q704.8,108.2 704.8,112.2 V202 Z" fill="var(--bar)"><title>paraphrase, overlap 0.3-0.4: 15</title></path>
+<path d="M706.8,202 V193.5 Q706.8,189.5 710.8,189.5 H727.0 Q731.0,189.5 731.0,193.5 V202 Z" fill="var(--bar)"><title>paraphrase, overlap 0.4-0.5: 2</title></path>
+<path d="M733.0,202 V162.2 Q733.0,158.2 737.0,158.2 H753.2 Q757.2,158.2 757.2,162.2 V202 Z" fill="var(--bar)"><title>paraphrase, overlap 0.5-0.6: 7</title></path>
+<path d="M759.2,202 V198.9 Q759.2,195.8 762.3,195.8 H780.3 Q783.4,195.8 783.4,198.9 V202 Z" fill="var(--bar)"><title>paraphrase, overlap 0.6-0.7: 1</title></path>
+<path d="M811.6,202 V198.9 Q811.6,195.8 814.7,195.8 H832.7 Q835.8,195.8 835.8,198.9 V202 Z" fill="var(--bar)"><title>paraphrase, overlap 0.8-0.9: 1</title></path>
 <text x="602.0" y="218" text-anchor="middle">0</text>
 <text x="732.0" y="218" text-anchor="middle">0.5</text>
 <text x="862.0" y="218" text-anchor="middle">1</text>

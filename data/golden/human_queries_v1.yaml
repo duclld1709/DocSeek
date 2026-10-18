@@ -1,15 +1,217 @@
-# Hand-written golden queries (origin: human). Target: ~30, spread over qtypes.
+# Hand-written golden queries. Target: ~30, spread over qtypes.
+#
+# AUTHORSHIP: every query below was written by the coding assistant (Claude, model
+# claude-opus-5-5) on 2026-10-18 at the project owner's request, NOT by a person. Each entry
+# carries `annotator: claude-opus-5-5`, and build-golden gives them origin "claude".
+# They aim at what the synthetic generator under-produces: short, vague or misspelled
+# queries whose words differ from the docs (low lexical overlap). Each relevant section was
+# read in data/processed/sections.jsonl before labelling.
+#
 # Find section ids with:  uv run docseek eval find-sections "background tasks"
 # Grades: 2 = answers directly, 1 = related/partial. Relevant sections must be readable by
 # the principal (anonymous: public; engineer: + eng-internal; security: + security-team).
 # unanswerable / permission-denied rows have `relevant: {}`.
 # Then: uv run docseek eval build-golden
-#
-# Example (remove the leading "# " to use it):
-# - text: "run code after returning the response"
-#   qtype: howto
-#   principal: anonymous
-#   relevant:
-#     "fastapi-docs:tutorial/background-tasks.md#background-tasks": 2
-#   notes: "written by hand"
-queries: []
+queries:
+  # --- howto ---
+  - text: "cors error when my react app on localhost:3000 calls the api"
+    qtype: howto
+    relevant:
+      "fastapi-docs:tutorial/cors.md#use-corsmiddleware": 2
+      "fastapi-docs:tutorial/cors.md#cors-cross-origin-resource-sharing": 1
+    annotator: claude-opus-5-5
+  - text: "send an email after the response already went out"
+    qtype: howto
+    relevant:
+      "fastapi-docs:tutorial/background-tasks.md#background-tasks": 2
+      "fastapi-docs:tutorial/background-tasks.md#add-the-background-task": 1
+    annotator: claude-opus-5-5
+  - text: "upload several files in one request"
+    qtype: howto
+    relevant:
+      "fastapi-docs:tutorial/request-files.md#multiple-file-uploads": 2
+    annotator: claude-opus-5-5
+  - text: "return 201 instead of 200"
+    qtype: howto
+    relevant:
+      "fastapi-docs:tutorial/response-status-code.md#response-status-code": 2
+      "fastapi-docs:tutorial/response-status-code.md#shortcut-to-remember-the-names": 1
+    annotator: claude-opus-5-5
+  - text: "dont send the password back in the response"
+    qtype: howto
+    relevant:
+      "fastapi-docs:tutorial/response-model.md#add-an-output-model": 2
+      "fastapi-docs:tutorial/response-model.md#return-type-and-data-filtering": 1
+    annotator: claude-opus-5-5
+  - text: "load my ml model once when the server boots"
+    qtype: howto
+    relevant:
+      "fastapi-docs:advanced/events.md#lifespan": 2
+      "fastapi-docs:advanced/events.md#use-case": 1
+    annotator: claude-opus-5-5
+  - text: "fake the auth dependency in pytest"
+    qtype: howto
+    relevant:
+      "fastapi-docs:advanced/testing-dependencies.md#use-the-app-dependency-overrides-attribute": 2
+      "fastapi-docs:advanced/testing-dependencies.md#use-cases-external-service": 1
+    annotator: claude-opus-5-5
+  - text: "add a header with the processing time to every response"
+    qtype: howto
+    relevant:
+      "fastapi-docs:tutorial/middleware.md#create-a-middleware": 2
+      "fastapi-docs:tutorial/middleware.md#before-and-after-the-response": 1
+    annotator: claude-opus-5-5
+  - text: "accept ?tag=a&tag=b as a list"
+    qtype: howto
+    relevant:
+      "fastapi-docs:tutorial/query-params-str-validations.md#query-parameter-list-multiple-values": 2
+    annotator: claude-opus-5-5
+  - text: "path parameter that itself contains slashes like a file path"
+    qtype: howto
+    relevant:
+      "fastapi-docs:tutorial/path-params.md#path-convertor": 2
+      "fastapi-docs:tutorial/path-params.md#path-parameters-containing-paths": 1
+    annotator: claude-opus-5-5
+  - text: "change the format of the 422 validation error response"
+    qtype: howto
+    relevant:
+      "fastapi-docs:tutorial/handling-errors.md#override-request-validation-exceptions": 2
+      "fastapi-docs:tutorial/handling-errors.md#use-the-requestvalidationerror-body": 1
+    annotator: claude-opus-5-5
+  - text: "recieve html form fields instead of json"
+    qtype: howto
+    relevant:
+      "fastapi-docs:tutorial/request-forms.md#form-data": 2
+      "fastapi-docs:tutorial/request-forms.md#define-form-parameters": 1
+    annotator: claude-opus-5-5
+  - text: "run the app with several worker processes"
+    qtype: howto
+    relevant:
+      "fastapi-docs:deployment/server-workers.md#multiple-workers": 2
+      "fastapi-docs:deployment/server-workers.md#recap": 1
+    annotator: claude-opus-5-5
+  - text: "reject unexpected fields in a form"
+    qtype: howto
+    relevant:
+      "fastapi-docs:tutorial/request-form-models.md#forbid-extra-form-fields": 2
+    annotator: claude-opus-5-5
+
+  # --- factoid ---
+  - text: "default status code of RedirectResponse"
+    qtype: factoid
+    relevant:
+      "fastapi-docs:advanced/custom-response.md#redirectresponse": 2
+    annotator: claude-opus-5-5
+  - text: "which middleware runs first on the request"
+    qtype: factoid
+    relevant:
+      "fastapi-docs:tutorial/middleware.md#multiple-middleware-execution-order": 2
+    annotator: claude-opus-5-5
+  - text: "what library does the jwt tutorial use to hash passwords"
+    qtype: factoid
+    relevant:
+      "fastapi-docs:tutorial/security/oauth2-jwt.md#install-pwdlib": 2
+      "fastapi-docs:tutorial/security/oauth2-jwt.md#hash-and-verify-the-passwords": 1
+    annotator: claude-opus-5-5
+  - text: "payments api uptime sla"
+    qtype: factoid
+    relevant:
+      "internal-kb:kb-0024.md#service-level-objectives": 2
+    annotator: claude-opus-5-5
+  - text: "how long does acme keep an idempotency key"
+    qtype: factoid
+    relevant:
+      "internal-kb:kb-0025.md#data-retention": 2
+    annotator: claude-opus-5-5
+  - text: "liveness and readiness endpoint paths"
+    qtype: factoid
+    principal: engineer
+    relevant:
+      "internal-kb:kb-0047.md#endpoints": 2
+    annotator: claude-opus-5-5
+
+  # --- conceptual ---
+  - text: "is on_event startup still the recommended way"
+    qtype: conceptual
+    relevant:
+      "fastapi-docs:advanced/events.md#alternative-events-deprecated": 2
+      "fastapi-docs:advanced/events.md#lifespan": 1
+    annotator: claude-opus-5-5
+  - text: "why must /users/me come before /users/{id}"
+    qtype: conceptual
+    relevant:
+      "fastapi-docs:tutorial/path-params.md#order-matters": 2
+    annotator: claude-opus-5-5
+  - text: "why bother hashing passwords if the db is private"
+    qtype: conceptual
+    relevant:
+      "fastapi-docs:tutorial/security/oauth2-jwt.md#why-use-password-hashing": 2
+      "fastapi-docs:tutorial/security/oauth2-jwt.md#password-hashing": 1
+    annotator: claude-opus-5-5
+
+  # --- symbol ---
+  - text: "response_model_exclude_unset"
+    qtype: symbol
+    relevant:
+      "fastapi-docs:tutorial/response-model.md#use-the-response-model-exclude-unset-parameter": 2
+    annotator: claude-opus-5-5
+  - text: "WebSocketDisconnect"
+    qtype: symbol
+    relevant:
+      "fastapi-docs:advanced/websockets.md#handling-disconnections-and-multiple-clients": 2
+    annotator: claude-opus-5-5
+  - text: "AfterValidator"
+    qtype: symbol
+    relevant:
+      "fastapi-docs:tutorial/query-params-str-validations.md#custom-validation": 2
+      "fastapi-docs:tutorial/query-params-str-validations.md#understand-that-code": 1
+    annotator: claude-opus-5-5
+
+  # --- multihop ---
+  - text: "check auth with a dependency on a websocket endpoint"
+    qtype: multihop
+    relevant:
+      "fastapi-docs:advanced/websockets.md#using-depends-and-others": 2
+      "fastapi-docs:tutorial/dependencies/index.md#first-steps": 1
+    annotator: claude-opus-5-5
+  - text: "which acme error code means rate limited and which header says when to retry"
+    qtype: multihop
+    relevant:
+      "internal-kb:kb-0023.md#error-mappings": 2
+      "internal-kb:kb-0006.md#error-handling": 2
+    annotator: claude-opus-5-5
+
+  # --- freshness ---
+  - text: "how many requests per minute can a merchant make"
+    qtype: freshness
+    relevant:
+      "internal-kb:kb-0006.md#thresholds": 2
+    stale:
+      - "internal-kb:kb-0005.md#rate-limiting-policy"
+    annotator: claude-opus-5-5
+
+  # --- permission (same query, two principals) ---
+  - text: "deadline to fix the high severity pentest issues"
+    qtype: permission
+    principal: security
+    relevant:
+      "internal-kb:kb-0019.md#action-items": 2
+      "internal-kb:kb-0019.md#summary": 2
+    annotator: claude-opus-5-5
+  - text: "deadline to fix the high severity pentest issues"
+    qtype: permission
+    principal: engineer
+    relevant: {}
+    notes: "same query as the security row; engineer may not read kb-0019"
+    annotator: claude-opus-5-5
+
+  # --- unanswerable ---
+  - text: "does fastapi support grpc services"
+    qtype: unanswerable
+    notes: "no gRPC content in either corpus (checked: 0 occurrences)"
+    annotator: claude-opus-5-5
+  - text: "acme parental leave policy"
+    qtype: unanswerable
+    principal: engineer
+    notes: "HR topic; not in the internal KB"
+    annotator: claude-opus-5-5

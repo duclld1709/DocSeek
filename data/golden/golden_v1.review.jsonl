@@ -1,0 +1,64 @@
+{"qid":"q0093","action":"edit","text":null,"qtype":"howto","relevant":null,"reference_answer":null,"note":"asks 'how do I handle'; howto, not conceptual","annotator":"claude-opus-5-5"}
+{"qid":"q0016","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0175","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0066","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0144","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0177","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0122","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0196","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0082","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0011","action":"edit","text":null,"qtype":null,"relevant":{"fastapi-docs:features.md#unlimited-plug-ins":2,"fastapi-docs:tutorial/dependencies/index.md#fastapi-plug-ins":1},"reference_answer":null,"note":"the 'FastAPI plug-ins' hard negative is about plug-ins via dependencies: related","annotator":"claude-opus-5-5"}
+{"qid":"q0161","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0046","action":"edit","text":null,"qtype":"conceptual","relevant":null,"reference_answer":null,"note":"asks how lru_cache works (explanation), not a task","annotator":"claude-opus-5-5"}
+{"qid":"q0145","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0183","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0140","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0211","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0091","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0004","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0166","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0054","action":"edit","text":null,"qtype":"factoid","relevant":null,"reference_answer":null,"note":"asks who is paged; a single fact","annotator":"claude-opus-5-5"}
+{"qid":"q0160","action":"edit","text":null,"qtype":"howto","relevant":{"fastapi-docs:tutorial/bigger-applications.md#include-the-apirouters-for-users-and-items":2,"internal-kb:kb-0046.md#router-configuration":1},"reference_answer":null,"note":"generic FastAPI how-to answered by one public tutorial section; the Acme convention is related, not the direct answer; not multi-hop","annotator":"claude-opus-5-5"}
+{"qid":"q0178","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0126","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0205","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0099","action":"edit","text":null,"qtype":null,"relevant":{"internal-kb:kb-0008.md#pool-capacity-constraints":2,"internal-kb:kb-0007.md#configuration":1},"reference_answer":"Each ledger-service pod may open at most 50 database connections (kb-0008, current; the older kb-0007 said 20) so that the PostgreSQL cluster's connection limit is not exhausted.","note":"draft only labelled the deprecated kb-0007 (20 connections); current doc kb-0008 (50) is the direct answer","annotator":"claude-opus-5-5"}
+{"qid":"q0033","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0162","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0057","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0153","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0180","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0134","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0195","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0108","action":"edit","text":null,"qtype":"symbol","relevant":null,"reference_answer":null,"note":"about the Body(examples=...) parameter; symbol, not conceptual","annotator":"claude-opus-5-5"}
+{"qid":"q0025","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0170","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0077","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0147","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0184","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0123","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0213","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0110","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0020","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0168","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0036","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0154","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0191","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0135","action":"edit","text":null,"qtype":null,"relevant":{"fastapi-docs:advanced/custom-response.md#fileresponse":2,"fastapi-docs:advanced/additional-responses.md#additional-media-types-for-the-main-response":1},"reference_answer":null,"note":"the FileResponse reference section is the direct answer; the labelled section only shows it in an example","annotator":"claude-opus-5-5"}
+{"qid":"q0199","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0083","action":"edit","text":null,"qtype":"howto","relevant":null,"reference_answer":null,"note":"asks how to export dependencies; howto","annotator":"claude-opus-5-5"}
+{"qid":"q0009","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0171","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0049","action":"edit","text":null,"qtype":"factoid","relevant":null,"reference_answer":null,"note":"asks which data types; a fact list, not a task","annotator":"claude-opus-5-5"}
+{"qid":"q0159","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0189","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0120","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0216","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0105","action":"edit","text":null,"qtype":"howto","relevant":null,"reference_answer":null,"note":"asks how to prevent overload; the answer is a procedure","annotator":"claude-opus-5-5"}
+{"qid":"q0013","action":"edit","text":"which services does the generated TypeScript client have when the app uses tags","qtype":null,"relevant":null,"reference_answer":null,"note":"original 'what services are created with tags' was too vague to be answerable","annotator":"claude-opus-5-5"}
+{"qid":"q0164","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0053","action":"edit","text":null,"qtype":"conceptual","relevant":null,"reference_answer":null,"note":"definition question; conceptual","annotator":"claude-opus-5-5"}
+{"qid":"q0158","action":"drop","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":"artificial multi-hop: the dataclasses section says nothing about async def; the async page alone answers it","annotator":"claude-opus-5-5"}
+{"qid":"q0188","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0115","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
+{"qid":"q0203","action":"accept","text":null,"qtype":null,"relevant":null,"reference_answer":null,"note":null,"annotator":"claude-opus-5-5"}
