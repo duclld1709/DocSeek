@@ -72,9 +72,16 @@ class FastAPICorpusConfig(_YamlModel):
         return self
 
 
+class InternalKBConfig(_YamlModel):
+    source: str
+    dir: Path
+    doc_types: list[str] = Field(min_length=1)
+
+
 class CorpusConfig(_YamlModel):
     manifest_path: Path
     fastapi: FastAPICorpusConfig
+    internal_kb: InternalKBConfig
 
 
 class UnknownPrincipalError(KeyError):

@@ -18,3 +18,10 @@ fastapi:
     - translation-banner.md
     - newsletter.md
   exclude_dirs: [css, js]
+
+# Corpus B: simulated "Acme Payments" internal KB (PROJECT_SPEC §3.2). Generated once by
+# `docseek data gen-internal` and committed, so runs are reproducible.
+internal_kb:
+  source: internal-kb
+  dir: data/internal_kb
+  doc_types: [runbook, adr, postmortem, onboarding, api-convention, security-policy]

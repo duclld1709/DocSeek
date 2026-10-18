@@ -154,6 +154,10 @@ fastapi:
   sparse_paths: [docs/en/docs, docs_src]
   docs_root: docs/en/docs
   code_root: docs_src
+internal_kb:
+  source: internal-kb
+  dir: {(tmp_path / "kb").as_posix()}
+  doc_types: [runbook]
 """,
         encoding="utf-8",
     )
