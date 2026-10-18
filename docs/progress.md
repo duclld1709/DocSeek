@@ -8,7 +8,8 @@
 | M1 Ingestion + eval harness | `m1-eval` | done (golden_v1: 248 q, dev 99 / test 149) |
 | M2 BM25 | `m2-bm25` | done |
 | M3 Dense | `m3-dense` | done |
-| M4 Hybrid + rerank | `m4-hybrid` | next |
+| M4 Hybrid + rerank | `m4-hybrid` | done (golden_v2: +1,512 judge labels, unreviewed) |
+| M5 Query understanding | `m5-query` | next (drafts in `src/docseek/query/`, `ingest/strategies.py`) |
 
 ## Modules and CLI
 
@@ -20,13 +21,21 @@
   → `data/index/emb/<model>/{passage,query}/`), `qdrant_store.py` (named vector `dense`,
   payload indexes, UUID5 ids, ACL `MatchAny` in every filter), `retriever.py`
   (`DenseRetriever`, `build_dense`; `embedder: hash` option for CI). Qdrant: `docker compose up -d qdrant`.
+- `hybrid/`: `fusion.py` (`rrf`, `weighted`, `HybridRetriever`), `normalization.py`,
+  `qdrant_native.py` (sparse BM25 + dense prefetch, Qdrant RRF/DBSF). `rerank/cross_encoder.py`
+  (`CrossEncoderReranker` with SQLite score cache `data/index/rerank_scores.sqlite`,
+  `RerankedRetriever`). Runner types: hybrid (children, method, alpha|weights, rrf_k, depth),
+  rerank (first_stage, model, top_n), qdrant_hybrid. `eval/runner.py::build_child` builds nested configs.
+- `core/onnx.py`: fastembed on GPU via onnxruntime-directml (Windows); `DOCSEEK_ONNX_PROVIDERS`.
+- `eval/pooling.py` + `docseek eval pool RUN... --depth 10 [--execute]` (dry run shows cost).
 - `core/filtering.py`: `matches_filter(metadata, MetadataFilter)`.
 - `testing/acl_checks.py`: `probe_leaks()` — use for every new retriever/tool test.
 - `eval/grid.py` + `docseek eval grid --config X --param retriever.k1=0.9,1.2 ...` (dev only).
 - `docseek index --config X`, `docseek search "q" --config X --principal P --k N`.
-- Retriever types in `eval/runner.py::RETRIEVERS`: random, oracle, bm25, tfidf, bm25s, dense.
+- Retriever types in `eval/runner.py::RETRIEVERS`: random, oracle, bm25, tfidf, bm25s, dense, hybrid, rerank, qdrant_hybrid.
 - Scripts: `scripts/results_table.py RUN... --ref RUN` (markdown tables + p-values),
-  `scripts/plot_grid_heatmap.py`, `scripts/m2_lexical_bench.py`.
+  `scripts/plot_grid_heatmap.py`, `scripts/m2_lexical_bench.py`, `scripts/m3_embed_bench.py`,
+  `scripts/m4_rerank_latency.py`, `scripts/hard_negatives.py`, `scripts/plot_quality_latency.py`.
 - CI: jobs lint, unit, eval-gate (`tests/unit/eval/test_eval_gate.py` vs
   `tests/fixtures/baseline_metrics.json`; refresh with `DOCSEEK_UPDATE_BASELINE=1`).
 
@@ -38,6 +47,11 @@
 
 - M3 `configs/experiments/dense_bge_small.yaml`: test nDCG@10 0.641, Recall@10 0.823,
   MRR@10 0.606, Leakage 0 (`experiments/20261018T133514Z_dense_bge_small_test`).
+
+- M4 `configs/experiments/rerank_bge20.yaml` (weighted min-max α 0.5 → bge-reranker-base top 20):
+  test v1 nDCG@10 0.739, Recall@10 0.902, MRR@10 0.701, Leakage 0
+  (`experiments/20261018T142702Z_rerank_bge20_test`); v2 0.799. Fast default:
+  `hybrid_weighted.yaml` test v1 0.709 (`…134221Z_hybrid_weighted_test`).
 
 ## Default decisions taken (no ADR needed)
 
@@ -54,6 +68,13 @@
 - M3: dense chunks embedded from `text_for_embedding` (= text for `section` strategy).
 - M3: CPU here is slow for transformers (~0.6 s per 400-token chunk for bge-small); plan
   reranker/LLM-free work accordingly; caches under `data/index/` make reruns free.
+
+- M4: weighted fusion gives missing chunks the list's minimum normalised score.
+- M4: golden v2 pool = top-10 of bm25f, dense, hybrid, rerank@20 (rerank added after a
+  measured pool bias); unanswerable queries not pooled; v1 stays the primary metric.
+- M4: switched fastembed to GPU (DirectML) at the user's request; reranker batch 8.
+- Budget: OpenAI ledger $0.933 of $2.00 after M4 → ~$1.07 left for M5–M8 (DeepEval in M8 is
+  the main remaining OpenAI consumer; generator/agent/vision use Gemini free tier).
 
 ## Open items
 
