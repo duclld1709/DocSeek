@@ -1,0 +1,273 @@
+"""LLM clients.
+
+- ``LiteLLMClient`` talks to providers through LiteLLM (retries with backoff, cost from
+  LiteLLM's bundled price map).
+- ``CachedLLMClient`` wraps any ``LLMClient`` with the SQLite cache, the run budget and
+  tracing. **Every LLM call in DocSeek goes through it** (CLAUDE.md); ``build_llm_client``
+  is the one place that assembles the stack.
+
+LiteLLM would otherwise download its price map from GitHub at import time, so the bundled
+map (pinned with the library version in ``uv.lock``) is forced: costs are reproducible
+and imports work offline.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import re
+import time
+from collections.abc import Callable
+from typing import Any
+
+from pydantic import BaseModel, ValidationError
+
+from docseek.core.config import Settings
+from docseek.core.interfaces import LLMClient
+from docseek.core.logging import get_logger
+from docseek.core.models import LLMResponse, ToolCall
+from docseek.core.tracing import Tracer
+from docseek.llm.cache import SQLiteLLMCache, cache_key
+from docseek.llm.cost import BudgetGuard
+
+os.environ.setdefault("LITELLM_LOCAL_MODEL_COST_MAP", "True")
+
+log = get_logger(__name__)
+
+CompletionFn = Callable[..., Any]
+_JSON_FENCE_RE = re.compile(r"^\s*```(?:json)?\s*\n(?P<body>.*)\n```\s*$", re.S)
+
+
+class StructuredOutputError(ValueError):
+    """The model's reply does not validate against the requested ``response_format``."""
+
+
+def parse_structured(content: str | None, response_format: type[BaseModel]) -> dict[str, Any]:
+    """Validate a JSON reply (optionally wrapped in a ```json fence) into a plain dict."""
+    if content is None:
+        raise StructuredOutputError("empty reply")
+    m = _JSON_FENCE_RE.match(content)
+    raw = m["body"] if m else content
+    try:
+        return response_format.model_validate(json.loads(raw)).model_dump(mode="json")
+    except (json.JSONDecodeError, ValidationError) as exc:
+        raise StructuredOutputError(f"{response_format.__name__}: {exc}") from exc
+
+
+class LiteLLMClient:
+    """Provider-agnostic completions via LiteLLM.
+
+    Args:
+        api_keys: Key per provider prefix (``"gemini"``, ``"openai"``); passed per call, so
+            secrets never have to be copied into ``os.environ``.
+        num_retries: LiteLLM retries (exponential backoff) on transient errors.
+        timeout_s: Per-request timeout.
+        completion: Injected completion function (tests); defaults to ``litellm.completion``.
+    """
+
+    def __init__(
+        self,
+        api_keys: dict[str, str] | None = None,
+        *,
+        num_retries: int = 3,
+        timeout_s: float = 120.0,
+        completion: CompletionFn | None = None,
+    ) -> None:
+        self._api_keys = api_keys or {}
+        self._num_retries = num_retries
+        self._timeout_s = timeout_s
+        self._completion = completion
+
+    def complete(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        model: str | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        response_format: type[BaseModel] | None = None,
+        temperature: float = 0.0,
+    ) -> LLMResponse:
+        if model is None:
+            raise ValueError("LiteLLMClient needs an explicit model (from configs/models.yaml)")
+        import litellm
+
+        completion = self._completion or litellm.completion
+        kwargs: dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            "num_retries": self._num_retries,
+            "timeout": self._timeout_s,
+        }
+        if tools:
+            kwargs["tools"] = tools
+        if response_format is not None:
+            kwargs["response_format"] = response_format
+        provider = model.split("/", 1)[0]
+        if provider in self._api_keys:
+            kwargs["api_key"] = self._api_keys[provider]
+
+        start = time.perf_counter()
+        resp = completion(**kwargs)
+        latency_ms = (time.perf_counter() - start) * 1000
+
+        message = resp.choices[0].message
+        tool_calls = [
+            ToolCall(
+                id=tc.id,
+                name=tc.function.name,
+                arguments=json.loads(tc.function.arguments or "{}"),
+            )
+            for tc in (message.tool_calls or [])
+        ]
+        usage = getattr(resp, "usage", None)
+        parsed = None
+        if response_format is not None:
+            try:
+                parsed = parse_structured(message.content, response_format)
+            except StructuredOutputError as exc:
+                # Not raised here: the call was paid for, and the caller must account for it.
+                log.warning("llm.structured_output_invalid", model=model, error=str(exc))
+        return LLMResponse(
+            content=message.content,
+            tool_calls=tool_calls,
+            parsed=parsed,
+            model=model,
+            tokens_in=int(getattr(usage, "prompt_tokens", 0) or 0),
+            tokens_out=int(getattr(usage, "completion_tokens", 0) or 0),
+            cost_usd=_cost(resp, model),
+            latency_ms=latency_ms,
+        )
+
+
+def _cost(resp: Any, model: str) -> float:
+    import litellm
+
+    try:
+        return float(litellm.completion_cost(completion_response=resp, model=model))
+    except Exception as exc:  # unknown price must not crash a run; it is logged loudly
+        log.warning("llm.cost_unknown", model=model, error=str(exc))
+        return 0.0
+
+
+class CachedLLMClient:
+    """Cache + budget + trace around an ``LLMClient``.
+
+    A cache hit costs nothing and is traced with ``cost_usd=0`` and ``cached=True`` (its
+    original price is kept as ``output.original_cost_usd``). Misses check the budget first,
+    then call the inner client, record the spend and store the response. Replies that fail
+    structured validation are paid for and traced, then raise ``StructuredOutputError``
+    without being cached.
+    """
+
+    def __init__(
+        self,
+        inner: LLMClient,
+        cache: SQLiteLLMCache,
+        budget: BudgetGuard,
+        tracer: Tracer | None = None,
+        *,
+        call_name: str = "llm",
+    ) -> None:
+        self.inner = inner
+        self.cache = cache
+        self.budget = budget
+        self.tracer = tracer or Tracer()
+        self.call_name = call_name
+
+    def complete(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        model: str | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        response_format: type[BaseModel] | None = None,
+        temperature: float = 0.0,
+        name: str | None = None,
+    ) -> LLMResponse:
+        """Like ``LLMClient.complete``; ``name`` labels the trace event (e.g. ``synth.query``)."""
+        if model is None:
+            raise ValueError("model is required (read it from configs/models.yaml)")
+        key = cache_key(
+            model=model,
+            messages=messages,
+            tools=tools,
+            temperature=temperature,
+            response_format=response_format,
+        )
+        start = time.perf_counter()
+        hit = self.cache.get(key)
+        if hit is not None:
+            response = hit.model_copy(update={"cached": True})
+            if response_format is not None and response.parsed is None:
+                response = response.model_copy(
+                    update={"parsed": parse_structured(response.content, response_format)}
+                )
+            self._trace(name, key, model, response, (time.perf_counter() - start) * 1000, 0.0)
+            return response
+
+        self.budget.check()
+        response = self.inner.complete(
+            messages,
+            model=model,
+            tools=tools,
+            response_format=response_format,
+            temperature=temperature,
+        )
+        self.budget.add(response.cost_usd)
+        self._trace(name, key, model, response, response.latency_ms, response.cost_usd)
+        if response_format is not None and response.parsed is None:
+            # Paid and traced above, but never cached: a retry should get a fresh answer.
+            raise StructuredOutputError(
+                f"{model} reply does not match {response_format.__name__}: "
+                f"{(response.content or '')[:200]!r}"
+            )
+        self.cache.put(key, response)
+        return response
+
+    def _trace(
+        self,
+        name: str | None,
+        key: str,
+        model: str,
+        response: LLMResponse,
+        latency_ms: float,
+        spent: float,
+    ) -> None:
+        self.tracer.record(
+            kind="llm_call",
+            name=name or self.call_name,
+            input={"model": model, "cache_key": key},
+            output={
+                "cached": response.cached,
+                "original_cost_usd": response.cost_usd,
+                "n_tool_calls": len(response.tool_calls),
+            },
+            latency_ms=latency_ms,
+            tokens_in=response.tokens_in,
+            tokens_out=response.tokens_out,
+            cost_usd=spent,
+        )
+
+
+def build_llm_client(
+    settings: Settings,
+    tracer: Tracer | None = None,
+    *,
+    completion: CompletionFn | None = None,
+) -> CachedLLMClient:
+    """The production stack: LiteLLM -> SQLite cache -> budget -> tracer."""
+    keys = {
+        provider: secret.get_secret_value()
+        for provider, secret in (
+            ("gemini", settings.gemini_api_key),
+            ("openai", settings.openai_api_key),
+        )
+        if secret is not None and secret.get_secret_value().strip()
+    }
+    return CachedLLMClient(
+        LiteLLMClient(keys, completion=completion),
+        SQLiteLLMCache(settings.llm_cache_path),
+        BudgetGuard(settings.budget_usd),
+        tracer,
+    )
