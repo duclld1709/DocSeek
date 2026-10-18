@@ -53,3 +53,37 @@ def test_rescore_demotes_stale_version() -> None:
     out = r.rescore(hits, 2)
     assert [h.section_id for h in out] == ["s:new.md#a", "s:old.md#a"]
     assert out[0].debug["pre_freshness_rank"] == 2
+
+
+def test_sigmoid_transform_keeps_penalty_direction_for_negative_scores() -> None:
+    from docseek.core.models import Chunk
+    from docseek.query.freshness import FreshnessReranker
+
+    def chunk(cid: str, doc: str, sup: str | None) -> Chunk:
+        return Chunk(
+            chunk_id=f"{cid}::section::0",
+            section_id=cid,
+            strategy="section",
+            text="t",
+            text_for_embedding="t",
+            metadata={"doc_id": doc, "updated_at": None, "status": "active", "supersedes": sup},
+            n_tokens=1,
+        )
+
+    old, new = chunk("s:old.md#a", "s:old.md", None), chunk("s:new.md#a", "s:new.md", "s:old.md")
+    hits = [
+        ScoredHit(
+            chunk_id=old.chunk_id, section_id=old.section_id, score=-1.0, rank=1, retriever="x"
+        ),
+        ScoredHit(
+            chunk_id=new.chunk_id, section_id=new.section_id, score=-1.5, rank=2, retriever="x"
+        ),
+    ]
+    raw = FreshnessReranker("f", None, [old, new], FreshnessConfig(beta=0))  # type: ignore[arg-type]
+    sig = FreshnessReranker(
+        "f", None, [old, new], FreshnessConfig(beta=0), score_transform="sigmoid"
+    )  # type: ignore[arg-type]
+    # Raw negative logits: halving -1.0 to -0.5 would *promote* the superseded doc.
+    assert raw.rescore(hits, 2)[0].section_id == "s:old.md#a"
+    # sigmoid(-1)*0.5 = 0.134 < sigmoid(-1.5) = 0.182: the superseded doc drops.
+    assert sig.rescore(hits, 2)[0].section_id == "s:new.md#a"

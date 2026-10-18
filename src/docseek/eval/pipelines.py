@@ -77,7 +77,12 @@ def build_freshness(
         superseded_penalty=float(opts.get("superseded_penalty", 0.5)),
     )
     return FreshnessReranker(
-        f"{inner.name}+fresh", inner, chunks, cfg, depth=int(opts.get("depth", 50))
+        f"{inner.name}+fresh",
+        inner,
+        chunks,
+        cfg,
+        depth=int(opts.get("depth", 50)),
+        score_transform=str(opts.get("score_transform", "identity")),
     )
 
 

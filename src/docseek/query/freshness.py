@@ -8,6 +8,8 @@ The penalties apply when the chunk's ``status`` is ``deprecated`` and when anoth
 ``supersedes`` its document. Hits are re-sorted by ``s'``. Scores must be non-negative
 (BM25, cosine of normalised vectors on this corpus, RRF), otherwise boosting would invert.
 ``reference`` is fixed (newest ``updated_at`` in the corpus) so runs are reproducible.
+Cross-encoder logits can be negative, so ``score_transform="sigmoid"`` maps them to (0, 1)
+before the multiplier is applied.
 """
 
 from __future__ import annotations
@@ -64,7 +66,11 @@ class FreshnessReranker:
         cfg: FreshnessConfig,
         *,
         depth: int = 50,
+        score_transform: str = "identity",
     ) -> None:
+        if score_transform not in ("identity", "sigmoid"):
+            raise ValueError(f"unknown score_transform {score_transform!r}")
+        self._sigmoid = score_transform == "sigmoid"
         self.name = name
         self._inner = inner
         self._cfg = cfg
@@ -85,7 +91,8 @@ class FreshnessReranker:
                 self.reference,
                 self._cfg,
             )
-            scored.append((h.score * m, h.rank, h))
+            base = 1.0 / (1.0 + math.exp(-h.score)) if self._sigmoid else h.score
+            scored.append((base * m, h.rank, h))
         scored.sort(key=lambda t: (-t[0], t[1]))
         return [
             h.model_copy(
