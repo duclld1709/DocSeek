@@ -1,0 +1,20 @@
+# Corpus A: FastAPI English docs, pinned for reproducibility (PROJECT_SPEC §3.1).
+manifest_path: data/raw/MANIFEST.json
+
+fastapi:
+  source: fastapi-docs
+  repo_url: https://github.com/fastapi/fastapi.git
+  commit: b23d78f2ce4e7b3ea48a59f51ca249690d9fd02c
+  dest: data/raw/fastapi
+  sparse_paths: [docs/en/docs, docs_src]
+  docs_root: docs/en/docs
+  code_root: docs_src
+  # Fetched but not indexed as regular docs. Paths are relative to docs_root.
+  exclude_files:
+    - release-notes.md # kept for the version graph (M6), not indexed as text
+    - fastapi-people.md
+    - external-links.md
+    - _llm-test.md
+    - translation-banner.md
+    - newsletter.md
+  exclude_dirs: [css, js]

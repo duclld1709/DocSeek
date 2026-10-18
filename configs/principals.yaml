@@ -1,0 +1,8 @@
+# Simulated principals -> ACL groups they may read (PROJECT_SPEC §3.2).
+# Unknown principals are rejected (fail closed), never mapped to a default.
+acl_groups: [public, eng-internal, security-team]
+
+principals:
+  anonymous: [public]
+  engineer: [public, eng-internal]
+  security: [public, eng-internal, security-team]
