@@ -1,7 +1,8 @@
 """Real provider calls (marker ``e2e``): verifies the model names in configs/models.yaml.
 
-Costs well under one cent per run. Never runs in CI; needs keys in ``.env``:
-``uv run pytest -m e2e tests/e2e``.
+Costs well under one cent the first time, nothing afterwards: it uses the project's LLM
+cache and spend ledger, so the spend is accounted for like any other call. Never runs in
+CI; needs keys in ``.env``: ``uv run pytest -m e2e tests/e2e``.
 """
 
 from pathlib import Path
@@ -26,24 +27,28 @@ def _roles(configs_dir: Path) -> dict[str, LLMRoleConfig]:
 
 
 @pytest.mark.parametrize("role", ["generator", "judge"])
-def test_model_answers_with_structured_output_and_cost(
-    role: str, configs_dir: Path, tmp_path: Path
-) -> None:
+def test_model_answers_with_structured_output_and_cost(role: str, configs_dir: Path) -> None:
     settings = Settings()
     cfg = _roles(configs_dir)[role]
     if not settings.api_key_status()[f"{cfg.provider.upper()}_API_KEY"]:
         pytest.skip(f"no key for {cfg.provider}")
     sink = MemoryTraceSink()
-    client = build_llm_client(
-        settings.model_copy(update={"llm_cache_path": tmp_path / "c.sqlite"}), Tracer(sink)
-    )
+    client = build_llm_client(settings, Tracer(sink))
     messages = [{"role": "user", "content": 'Reply with JSON {"word": "pong"}.'}]
     resp = client.complete(
-        messages, model=cfg.model, temperature=cfg.temperature, response_format=Echo
+        messages,
+        model=cfg.model,
+        temperature=cfg.temperature,
+        response_format=Echo,
+        name="e2e.smoke",
     )
     assert resp.parsed is not None and resp.parsed["word"].lower() == "pong"
-    assert resp.cost_usd > 0 and resp.tokens_in > 0
+    assert resp.cached or (resp.cost_usd > 0 and resp.tokens_in > 0)
     again = client.complete(
-        messages, model=cfg.model, temperature=cfg.temperature, response_format=Echo
+        messages,
+        model=cfg.model,
+        temperature=cfg.temperature,
+        response_format=Echo,
+        name="e2e.smoke",
     )
-    assert again.cached and [e.cost_usd for e in sink.events][1] == 0.0
+    assert again.cached and sink.events[-1].cost_usd == 0.0
