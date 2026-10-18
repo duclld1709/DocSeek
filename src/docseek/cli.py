@@ -167,7 +167,7 @@ def index_cmd(
     from docseek.eval.runner import build_retriever, load_experiment
 
     cfg = load_experiment(config)
-    inputs = _eval_inputs(cfg.golden, cfg.processed_dir)
+    inputs = _eval_inputs(cfg.golden, cfg.processed_dir, cfg.chunks_file)
     start = time.perf_counter()
     retriever = build_retriever(cfg, inputs["chunks"], [], inputs["policy"])  # type: ignore[arg-type]
     console.print(f"{retriever.name}: ready in {time.perf_counter() - start:.2f}s")
@@ -187,7 +187,7 @@ def search_cmd(
     from docseek.eval.runner import build_retriever, load_experiment
 
     cfg = load_experiment(config)
-    inputs = _eval_inputs(cfg.golden, cfg.processed_dir)
+    inputs = _eval_inputs(cfg.golden, cfg.processed_dir, cfg.chunks_file)
     retriever = build_retriever(cfg, inputs["chunks"], [], inputs["policy"])  # type: ignore[arg-type]
     hits = retriever.search(Query(qid="cli", text=text, principal=principal), k)
     table = Table(title=f"{retriever.name}, principal={principal}")
@@ -289,7 +289,9 @@ def data_gen_internal(
     console.print(f"{len(docs)} KB docs valid in {out_dir}")
 
 
-def _eval_inputs(golden_path: Path, processed_dir: Path) -> dict[str, object]:
+def _eval_inputs(
+    golden_path: Path, processed_dir: Path, chunks_file: str = "chunks.jsonl"
+) -> dict[str, object]:
     """Golden set, sections, chunks and access policy for ``eval run`` / ``eval grid``."""
     from docseek.core.acl import AccessPolicy
     from docseek.core.models import Chunk, Section
@@ -305,7 +307,7 @@ def _eval_inputs(golden_path: Path, processed_dir: Path) -> dict[str, object]:
     return {
         "golden": load_golden(golden_path),
         "sections": read_jsonl(processed_dir / "sections.jsonl", Section),
-        "chunks": read_jsonl(processed_dir / "chunks.jsonl", Chunk),
+        "chunks": read_jsonl(processed_dir / chunks_file, Chunk),
         "policy": AccessPolicy(load_principals(Settings().configs_dir)),
         "golden_path": golden_path,
     }
@@ -331,7 +333,7 @@ def eval_run(
 
     checked = _check_split(split)
     cfg = load_experiment(config)
-    inputs = _eval_inputs(golden or cfg.golden, cfg.processed_dir)
+    inputs = _eval_inputs(golden or cfg.golden, cfg.processed_dir, cfg.chunks_file)
     run_dir = run_experiment(
         cfg,
         split=checked,
@@ -377,7 +379,7 @@ def eval_grid(
         raise typer.Exit(code=1)
     base = load_experiment(config)
     params = dict(parse_param(p) for p in param)
-    inputs = _eval_inputs(base.golden, base.processed_dir)
+    inputs = _eval_inputs(base.golden, base.processed_dir, base.chunks_file)
     experiments_dir = Settings().experiments_dir
 
     def run_one(cfg: ExperimentConfig) -> Path:

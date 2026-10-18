@@ -59,6 +59,7 @@ class ExperimentConfig(BaseModel):
     cutoffs: list[int] = Field(default_factory=lambda: [1, 3, 5, 10])
     golden: Path = Path("data/golden/golden_v1.jsonl")
     processed_dir: Path = Path("data/processed")
+    chunks_file: str = "chunks.jsonl"  # M5 chunking ablation: chunks_<strategy>.jsonl
     seed: int = DEFAULT_SEED
     bootstrap_resamples: int = Field(default=1000, ge=100)
 
@@ -237,6 +238,21 @@ def _qdrant_hybrid(
     return retriever
 
 
+def _pipeline(kind: str) -> RetrieverFactory:
+    def factory(
+        cfg: RetrieverConfig,
+        chunks: list[Chunk],
+        golden: list[GoldenQuery],
+        policy: AccessPolicy,
+        seed: int,
+    ) -> Retriever:
+        from docseek.eval.pipelines import BUILDERS
+
+        return BUILDERS[kind](cfg.model_dump(exclude={"type"}), chunks, golden, policy, seed)
+
+    return factory
+
+
 RETRIEVERS: dict[str, RetrieverFactory] = {
     "random": _random,
     "oracle": _oracle,
@@ -247,6 +263,7 @@ RETRIEVERS: dict[str, RetrieverFactory] = {
     "hybrid": _hybrid,
     "rerank": _rerank,
     "qdrant_hybrid": _qdrant_hybrid,
+    **{kind: _pipeline(kind) for kind in ("freshness", "expand", "filtered", "router")},
 }
 
 
@@ -380,20 +397,26 @@ def run_experiment(
         raise ValueError(f"no golden queries in split {split!r}")
     run_dir = make_run_dir(experiments_dir, f"{cfg.name}_{split}")
     tracer = Tracer(JsonlTraceSink(run_dir / "traces.jsonl"))
-    retriever = build_retriever(cfg, chunks, golden, policy)
-    section_acl = {s.section_id: s.acl for s in sections}
-    results = [
-        evaluate_query(
-            q,
-            retriever,
-            k=cfg.k,
-            cutoffs=cfg.cutoffs,
-            section_acl=section_acl,
-            policy=policy,
-            tracer=tracer,
-        )
-        for q in queries
-    ]
+    from docseek.eval.pipelines import RUN_TRACER
+
+    token = RUN_TRACER.set(tracer)  # LLM-backed retrievers trace into this run
+    try:
+        retriever = build_retriever(cfg, chunks, golden, policy)
+        section_acl = {s.section_id: s.acl for s in sections}
+        results = [
+            evaluate_query(
+                q,
+                retriever,
+                k=cfg.k,
+                cutoffs=cfg.cutoffs,
+                section_acl=section_acl,
+                policy=policy,
+                tracer=tracer,
+            )
+            for q in queries
+        ]
+    finally:
+        RUN_TRACER.reset(token)
     metrics = aggregate(results, n_resamples=cfg.bootstrap_resamples, seed=cfg.seed)
     metrics.update(name=cfg.name, retriever=retriever.name, split=split, k=cfg.k)
     write_json(run_dir / "metrics.json", metrics)
