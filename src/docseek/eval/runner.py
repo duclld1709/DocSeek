@@ -124,7 +124,7 @@ def _dense(
     return build_dense(cfg.model_dump(exclude={"type"}), chunks, policy)
 
 
-def _child(
+def build_child(
     raw: Any, chunks: list[Chunk], golden: list[GoldenQuery], policy: AccessPolicy, seed: int
 ) -> Retriever:
     cfg = RetrieverConfig.model_validate(raw)
@@ -146,10 +146,15 @@ def _hybrid(
 
     opts = cfg.model_dump(exclude={"type"})
     children = {
-        label: _child(raw, chunks, golden, policy, seed)
+        label: build_child(raw, chunks, golden, policy, seed)
         for label, raw in dict(opts["children"]).items()
     }
     method = str(opts.get("method", "rrf"))
+    weights = opts.get("weights")
+    if opts.get("alpha") is not None:  # two children: alpha on the first, 1 - alpha on the second
+        first, second = list(children)
+        alpha = float(opts["alpha"])
+        weights = {first: alpha, second: 1.0 - alpha}
     tag = f"rrf{opts.get('rrf_k', 60)}" if method == "rrf" else f"w{opts.get('norm', 'minmax')}"
     return HybridRetriever(
         f"hybrid-{tag}-" + "+".join(children),
@@ -157,7 +162,7 @@ def _hybrid(
         method=method,
         depth=int(opts.get("depth", 50)),
         rrf_k=float(opts.get("rrf_k", 60)),
-        weights=opts.get("weights"),
+        weights=weights,
         norm=str(opts.get("norm", "minmax")),
     )
 
@@ -177,7 +182,7 @@ def _rerank(
     )
 
     opts = cfg.model_dump(exclude={"type"})
-    first = _child(opts["first_stage"], chunks, golden, policy, seed)
+    first = build_child(opts["first_stage"], chunks, golden, policy, seed)
     model = str(opts.get("model") or load_models_config().reranker.default)
     cache = opts.get("cache_path", "data/index/rerank_scores.sqlite")
     max_chars = opts.get("max_chars")

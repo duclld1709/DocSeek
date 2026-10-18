@@ -46,15 +46,17 @@ class CrossEncoderReranker:
         self,
         model_name: str,
         *,
-        batch_size: int = 16,
+        batch_size: int = 8,  # DirectML slows down sharply with large batches
         cache_path: Path | None = None,
         max_chars: int | None = None,
     ) -> None:
         from fastembed.rerank.cross_encoder import TextCrossEncoder  # heavy import
 
+        from docseek.core.onnx import onnx_providers
+
         self.name = f"ce:{model_name.split('/')[-1]}"
         self.model_name = model_name
-        self._model = TextCrossEncoder(model_name)
+        self._model = TextCrossEncoder(model_name, providers=list(onnx_providers()))
         self._batch_size = batch_size
         self._cache = ScoreCache(cache_path) if cache_path else None
         self._max_chars = max_chars

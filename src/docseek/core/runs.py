@@ -7,6 +7,7 @@ and dirty flag, library versions, machine, seed and any job-specific fields.
 from __future__ import annotations
 
 import json
+import os
 import platform
 import subprocess
 import sys
@@ -23,6 +24,9 @@ _TRACKED_PACKAGES = (
     "tokenizers",
     "ranx",
     "fastembed",
+    "onnxruntime",
+    "onnxruntime-directml",
+    "qdrant-client",
     "hypothesis",
 )
 
@@ -66,6 +70,8 @@ def environment_info(**extra: Any) -> dict[str, Any]:
         "machine": platform.machine(),
         "processor": platform.processor(),
         "packages": versions,
+        # Which ONNX device fastembed models use (auto = DirectML GPU when installed).
+        "onnx_providers_env": os.environ.get("DOCSEEK_ONNX_PROVIDERS", "auto"),
         **extra,
     }
 

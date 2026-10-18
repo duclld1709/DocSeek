@@ -36,11 +36,13 @@ class FastEmbedEmbedder:
     ) -> None:
         from fastembed import TextEmbedding  # heavy import, only for real runs
 
+        from docseek.core.onnx import onnx_providers
+
         self.name = f"fastembed:{model_name}"
         self.model_name = model_name
         self.query_prefix = query_prefix
         self.passage_prefix = passage_prefix
-        self._model = TextEmbedding(model_name)
+        self._model = TextEmbedding(model_name, providers=list(onnx_providers()))
         self._batch_size = batch_size
         self.dim = int(self._model.embedding_size)
 
