@@ -35,11 +35,11 @@ flowchart TB
 |---|---|---|
 | `core/` | Pydantic models, stable ids, `Protocol` interfaces, settings, structured logging | M0 |
 | `testing/` | Deterministic fakes (`HashEmbedder`, `IdentityReranker`, `ScriptedLLM`) | M0 |
-| `data/` | `data fetch` (pinned sparse clone + manifest) | M0 |
+| `data/` | `data fetch` (pinned sparse clone + manifest), `data gen-internal` (Corpus B) | M0, M1 |
 | `doctor.py`, `cli.py` | Environment checks and CLI entry point | M0 |
-| `ingest/` | Markdown parser, chunking, metadata | M1 |
-| `llm/` | `CachedLLMClient`, `BudgetGuard`, cost accounting | M1 |
-| `eval/` | Golden set, synthetic queries, metrics, judges, statistics, runner | M1 |
+| `ingest/` | Markdown parser, code includes, normalisation, metadata, internal KB, chunking, `docseek ingest` | M1 |
+| `llm/` | `LiteLLMClient`, `CachedLLMClient`, `BudgetGuard`, `SpendLedger`, rate limiter | M1 |
+| `eval/` | Golden set, synthetic queries, review/labelling, judge + calibration, metrics, statistics, runner | M1 |
 | `lexical/` | Tokenizer, inverted index, TF-IDF, BM25 | M2 |
 | `dense/` | Embedders, Qdrant store | M3 |
 | `hybrid/`, `rerank/` | Fusion, normalisation, cross-encoder | M4 |
@@ -59,6 +59,49 @@ Chunk     chunk_id   = "<section_id>::<strategy>::<n>"   ...index.md#first-steps
 Relevance is labelled per **section**; chunk hits are mapped back to sections (best rank
 per section, duplicates dropped) during evaluation, so chunking strategies can be compared
 on the same golden set. Helpers live in `docseek.core.ids`.
+
+## Ingestion (M1)
+
+```mermaid
+flowchart LR
+    A[data/raw/fastapi<br/>pinned checkout] --> P[markdown_parser<br/>fences, headings, anchors]
+    P --> I[includes<br/>resolve code from docs/en/]
+    I --> N[normalize<br/>admonitions, tabs, HTML, links]
+    N --> M[metadata<br/>doc_type, git updated_at, acl]
+    B[data/internal_kb<br/>front matter: acl, version, supersedes] --> P
+    M --> L[resolve_links] --> C[chunking: section<br/>512 WordPiece tokens, paragraph overlap]
+    L --> S[(sections.jsonl)]
+    C --> K[(chunks.jsonl)]
+```
+
+The parser is line-based, not CommonMark, so it keeps exact line numbers for provenance and
+understands the mkdocs dialect. Unresolvable constructs become placeholders plus a reported
+`ParseIssue`, never raw syntax. `docseek ingest` skips the work when the input hash (corpus
+commit, KB files, chunking settings, token counter, ingest code) is unchanged.
+
+## LLM access (M1)
+
+```
+caller --> CachedLLMClient --(miss)--> BudgetGuard (per run) --> SpendLedger (per provider,
+   |            |                       whole project)          --> LiteLLMClient --> provider
+   |            +--(hit)--> response, cost 0          RateLimiter (rpm), model params
+   +--> Tracer: one llm_call event per call (tokens, cost actually spent, cached flag)
+```
+
+- The cache key is the sha256 of model, messages, tools, temperature, response schema and
+  per-model parameters (`reasoning_effort`), so reruns are free and deterministic.
+- Structured replies that fail validation are paid for and traced but not cached.
+- Model choice and spend limits are in `configs/models.yaml` (ADR 0003).
+
+## Evaluation harness (M1)
+
+- `eval synth` drafts queries per qtype with the generator, filters them (dedup by
+  embedding, answerability by the judge), records lexical overlap and judged hard negatives.
+- `eval review`, `eval build-golden`, `eval label` and `eval calibrate` are the human steps:
+  review, hand-written queries, blind labels, judge-vs-human kappa and bias checks.
+- `eval run` evaluates a retriever config on a split; `eval compare` gives paired deltas
+  with bootstrap CIs and randomization p-values. Random and Oracle retrievers check the
+  harness itself. Relevance is per section (ADR 0002).
 
 ## Cross-cutting rules
 
