@@ -228,7 +228,53 @@ def calibrate(
     console.print(f"{len(report['disagreements'])} disagreements -> {run_dir / 'report.json'}")
 
 
+def golden_report(
+    golden: Annotated[Path, typer.Option()] = GOLDEN_DIR / "golden_v1.jsonl",
+    svg: Annotated[Path | None, typer.Option(help="Write the lexical-overlap chart here.")] = None,
+    out: Annotated[Path | None, typer.Option(help="Write the statistics as JSON here.")] = None,
+) -> None:
+    """Golden-set statistics and the lexical-overlap chart for docs/results."""
+    import json
+
+    from docseek.eval.report import golden_stats, overlap_bins, overlap_svg
+
+    queries = load_golden(golden)
+    stats = golden_stats(queries)
+    stats["lexical_overlap_bins"] = overlap_bins(queries)
+    if svg is not None:
+        svg.parent.mkdir(parents=True, exist_ok=True)
+        title = f"Lexical overlap by query style ({golden.name})"
+        svg.write_text(overlap_svg(queries, title), encoding="utf-8", newline="\n")
+    text = json.dumps(stats, indent=2, ensure_ascii=False)
+    if out is not None:
+        out.write_text(text + "\n", encoding="utf-8", newline="\n")
+    console.print(text)
+
+
+def costs() -> None:
+    """LLM spend per run (from traces) and the project ledger (paid calls only)."""
+    from docseek.eval.report import run_costs
+    from docseek.llm.cost import SpendLedger
+
+    settings = Settings()
+    for row in run_costs(settings.experiments_dir):
+        for provider, p in row["providers"].items():
+            console.print(
+                f"{row['run']:<45} {provider:<7} paid {int(p['paid_calls']):>4} "
+                f"cached {int(p['cached_calls']):>4} in {int(p['tokens_in']):>7} "
+                f"out {int(p['tokens_out']):>6} ${p['cost_usd']:.4f}"
+            )
+    limits = load_models_config(settings.configs_dir).spend_limits_usd
+    for provider, s in SpendLedger(settings.llm_cache_path).summary().items():
+        limit = f" of ${limits[provider]:.2f} limit" if provider in limits else " (no limit)"
+        console.print(
+            f"ledger {provider}: {int(s['calls'])} paid calls, ${s['cost_usd']:.4f}{limit}"
+        )
+
+
 def register(app: typer.Typer) -> None:
+    app.command("golden-report")(golden_report)
+    app.command("costs")(costs)
     app.command("review")(review)
     app.command("find-sections")(find)
     app.command("build-golden")(build)
