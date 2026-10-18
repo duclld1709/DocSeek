@@ -6,8 +6,13 @@ tools for an agent, all evaluated against a golden set with statistical tests.
 
 [![CI](https://github.com/duclld1709/DocSeek/actions/workflows/ci.yml/badge.svg)](https://github.com/duclld1709/DocSeek/actions/workflows/ci.yml)
 
-> **Status:** M1 (ingestion + evaluation harness) in progress. The retrieval pipeline and the benchmark are built milestone
-> by milestone; see [Roadmap](#roadmap).
+> **Status:** M1 (ingestion + evaluation harness) done, tag `m1-eval`. The retrieval
+> pipeline and the benchmark are built milestone by milestone; see [Roadmap](#roadmap).
+>
+> **Note on labels:** the golden-set review, the hand-written queries and the judge
+> calibration labels of M1 were produced by an AI coding assistant (Claude), not by a
+> person, and are tagged as such in the data. The judge's κ = 0.92 is agreement with those
+> labels; see [docs/results/M1.md](docs/results/M1.md).
 
 ## Results at a glance
 
