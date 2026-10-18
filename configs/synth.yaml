@@ -11,12 +11,13 @@ targets:
   permission: 15   # rows; each base query yields a privileged and an unprivileged row
   unanswerable: 25
 # Generate this many times the target before filtering (dedup, answerability, balance).
-oversample: 1.5
+oversample: 1.3
 # Sections with fewer prose words (outside code fences) are not used as sources.
 min_prose_words: 40
-max_section_chars: 4000
+max_section_chars: 3000
 # Queries with cosine similarity above this to an earlier kept query are dropped.
 dedup_threshold: 0.92
 # Hard negatives: nearest sections by embedding (other pages), kept if the judge says 0.
-hard_negative_candidates: 3
+# Kept small for the M1 budget (ADR 0003); every candidate costs one judge call.
+hard_negative_candidates: 2
 workers: 4

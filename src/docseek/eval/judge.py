@@ -30,7 +30,7 @@ from docseek.eval.stats import cohen_kappa
 from docseek.llm.client import CachedLLMClient
 
 Order = Literal["query_first", "section_first"]
-MAX_SECTION_CHARS = 6000
+MAX_SECTION_CHARS = 3000  # judge input cost (ADR 0003); most sections are shorter
 
 
 class RelevanceJudgment(BaseModel):

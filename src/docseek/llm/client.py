@@ -16,19 +16,20 @@ from __future__ import annotations
 import json
 import os
 import re
+import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
-from docseek.core.config import Settings
+from docseek.core.config import ModelsConfig, Settings, load_models_config
 from docseek.core.interfaces import LLMClient
 from docseek.core.logging import get_logger
 from docseek.core.models import LLMResponse, ToolCall
 from docseek.core.tracing import Tracer
 from docseek.llm.cache import SQLiteLLMCache, cache_key
-from docseek.llm.cost import BudgetGuard
+from docseek.llm.cost import BudgetGuard, SpendLedger
 
 os.environ.setdefault("LITELLM_LOCAL_MODEL_COST_MAP", "True")
 
@@ -60,6 +61,8 @@ class LiteLLMClient:
     Args:
         api_keys: Key per provider prefix (``"gemini"``, ``"openai"``); passed per call, so
             secrets never have to be copied into ``os.environ``.
+        model_params: Extra LiteLLM kwargs per model (e.g. ``reasoning_effort``).
+        rpm_limits: Requests-per-minute cap per model, enforced client-side.
         num_retries: LiteLLM retries (exponential backoff) on transient errors.
         timeout_s: Per-request timeout.
         completion: Injected completion function (tests); defaults to ``litellm.completion``.
@@ -69,11 +72,15 @@ class LiteLLMClient:
         self,
         api_keys: dict[str, str] | None = None,
         *,
+        model_params: Mapping[str, Mapping[str, Any]] | None = None,
+        rpm_limits: Mapping[str, int] | None = None,
         num_retries: int = 3,
         timeout_s: float = 120.0,
         completion: CompletionFn | None = None,
     ) -> None:
         self._api_keys = api_keys or {}
+        self._model_params = model_params or {}
+        self._limiters = {m: RateLimiter(rpm) for m, rpm in (rpm_limits or {}).items()}
         self._num_retries = num_retries
         self._timeout_s = timeout_s
         self._completion = completion
@@ -103,10 +110,13 @@ class LiteLLMClient:
             kwargs["tools"] = tools
         if response_format is not None:
             kwargs["response_format"] = response_format
+        kwargs.update(self._model_params.get(model, {}))
         provider = model.split("/", 1)[0]
         if provider in self._api_keys:
             kwargs["api_key"] = self._api_keys[provider]
 
+        if model in self._limiters:
+            self._limiters[model].wait()
         start = time.perf_counter()
         resp = completion(**kwargs)
         latency_ms = (time.perf_counter() - start) * 1000
@@ -140,6 +150,33 @@ class LiteLLMClient:
         )
 
 
+class RateLimiter:
+    """Spaces calls at least ``60 / rpm`` seconds apart (shared by all threads)."""
+
+    def __init__(
+        self,
+        rpm: int,
+        *,
+        clock: Callable[[], float] = time.monotonic,
+        sleep: Callable[[float], None] = time.sleep,
+    ) -> None:
+        if rpm <= 0:
+            raise ValueError("rpm must be > 0")
+        self.interval = 60.0 / rpm
+        self._clock = clock
+        self._sleep = sleep
+        self._next = 0.0
+        self._lock = threading.Lock()
+
+    def wait(self) -> None:
+        with self._lock:
+            now = self._clock()
+            start = max(now, self._next)
+            self._next = start + self.interval
+        if start > now:
+            self._sleep(start - now)
+
+
 def _cost(resp: Any, model: str) -> float:
     import litellm
 
@@ -167,12 +204,19 @@ class CachedLLMClient:
         budget: BudgetGuard,
         tracer: Tracer | None = None,
         *,
+        ledger: SpendLedger | None = None,
+        spend_limits: Mapping[str, float] | None = None,
+        model_params: Mapping[str, Mapping[str, Any]] | None = None,
         call_name: str = "llm",
     ) -> None:
         self.inner = inner
         self.cache = cache
         self.budget = budget
         self.tracer = tracer or Tracer()
+        self.ledger = ledger
+        self.spend_limits = dict(spend_limits or {})
+        # Must match what the inner client sends: they shape the answer, so they key the cache.
+        self.model_params = model_params or {}
         self.call_name = call_name
 
     def complete(
@@ -194,6 +238,7 @@ class CachedLLMClient:
             tools=tools,
             temperature=temperature,
             response_format=response_format,
+            extra=self.model_params.get(model),
         )
         start = time.perf_counter()
         hit = self.cache.get(key)
@@ -207,6 +252,8 @@ class CachedLLMClient:
             return response
 
         self.budget.check()
+        if self.ledger is not None:
+            self.ledger.check(model, self.spend_limits)
         response = self.inner.complete(
             messages,
             model=model,
@@ -215,6 +262,14 @@ class CachedLLMClient:
             temperature=temperature,
         )
         self.budget.add(response.cost_usd)
+        if self.ledger is not None:
+            self.ledger.record(
+                model=model,
+                name=name or self.call_name,
+                tokens_in=response.tokens_in,
+                tokens_out=response.tokens_out,
+                cost_usd=response.cost_usd,
+            )
         self._trace(name, key, model, response, response.latency_ms, response.cost_usd)
         if response_format is not None and response.parsed is None:
             # Paid and traced above, but never cached: a retry should get a fresh answer.
@@ -254,9 +309,14 @@ def build_llm_client(
     settings: Settings,
     tracer: Tracer | None = None,
     *,
+    models: ModelsConfig | None = None,
     completion: CompletionFn | None = None,
 ) -> CachedLLMClient:
-    """The production stack: LiteLLM -> SQLite cache -> budget -> tracer."""
+    """The production stack: LiteLLM -> SQLite cache -> run budget + project ledger -> tracer.
+
+    Per-model parameters, rpm caps and project spend limits come from ``configs/models.yaml``.
+    """
+    models = models or load_models_config(settings.configs_dir)
     keys = {
         provider: secret.get_secret_value()
         for provider, secret in (
@@ -265,9 +325,15 @@ def build_llm_client(
         )
         if secret is not None and secret.get_secret_value().strip()
     }
+    params = models.model_params()
     return CachedLLMClient(
-        LiteLLMClient(keys, completion=completion),
+        LiteLLMClient(
+            keys, model_params=params, rpm_limits=models.rpm_limits(), completion=completion
+        ),
         SQLiteLLMCache(settings.llm_cache_path),
         BudgetGuard(settings.budget_usd),
         tracer,
+        ledger=SpendLedger(settings.llm_cache_path),
+        spend_limits=models.spend_limits_usd,
+        model_params=params,
     )

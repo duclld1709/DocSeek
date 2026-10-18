@@ -6,6 +6,7 @@ import hashlib
 import json
 import sqlite3
 import threading
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -24,13 +25,15 @@ def cache_key(
     tools: list[dict[str, Any]] | None,
     temperature: float,
     response_format: type[BaseModel] | None,
+    extra: Mapping[str, Any] | None = None,
 ) -> str:
     """sha256 of ``(model, messages, tools, temperature, response schema)`` (PROJECT_SPEC §4.3).
 
     The response schema is part of the key: the same prompt asked for a different structure
-    must not return a stale shape.
+    must not return a stale shape. So are ``extra`` provider parameters such as
+    ``reasoning_effort`` (left out of the payload when empty, keeping older keys valid).
     """
-    payload = {
+    payload: dict[str, Any] = {
         "v": CACHE_KEY_VERSION,
         "model": model,
         "messages": messages,
@@ -38,6 +41,8 @@ def cache_key(
         "temperature": temperature,
         "response_format": response_format.model_json_schema() if response_format else None,
     }
+    if extra:
+        payload["extra"] = dict(extra)
     blob = json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 

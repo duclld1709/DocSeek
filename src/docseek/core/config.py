@@ -117,6 +117,10 @@ class PrincipalsConfig(_YamlModel):
 class LLMRoleConfig(_YamlModel):
     model: str
     temperature: float = Field(default=0.0, ge=0.0, le=2.0)
+    # Passed to LiteLLM as-is ("none" disables thinking, whose tokens are billed as output).
+    reasoning_effort: str | None = None
+    # Client-side cap on requests per minute (free tiers rate-limit hard); None = no cap.
+    rpm: int | None = Field(default=None, gt=0)
 
     @property
     def provider(self) -> str:
@@ -160,6 +164,27 @@ class ModelsConfig(_YamlModel):
     llm: LLMConfig
     embedding: ModelChoice
     reranker: ModelChoice
+    # Cumulative spend cap per provider across every run (spend ledger); absent = no cap.
+    spend_limits_usd: dict[str, float] = Field(default_factory=dict)
+
+    def model_params(self) -> dict[str, dict[str, object]]:
+        """Extra LiteLLM kwargs per model name (same model in two roles must agree)."""
+        out: dict[str, dict[str, object]] = {}
+        for role in (self.llm.generator, self.llm.judge, self.llm.agent, self.llm.vision):
+            params: dict[str, object] = {}
+            if role.reasoning_effort is not None:
+                params["reasoning_effort"] = role.reasoning_effort
+            if out.setdefault(role.model, params) != params:
+                raise ValueError(f"roles using {role.model} disagree on extra parameters")
+        return out
+
+    def rpm_limits(self) -> dict[str, int]:
+        roles = (self.llm.generator, self.llm.judge, self.llm.agent, self.llm.vision)
+        limits: dict[str, int] = {}
+        for role in roles:
+            if role.rpm is not None:
+                limits[role.model] = min(role.rpm, limits.get(role.model, role.rpm))
+        return limits
 
 
 class ChunkingSettings(_YamlModel):
