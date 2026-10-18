@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal, cast
 
 import typer
 from rich.console import Console
@@ -22,6 +22,8 @@ app = typer.Typer(
 )
 data_app = typer.Typer(help="Fetch and generate corpora.", no_args_is_help=True)
 app.add_typer(data_app, name="data")
+eval_app = typer.Typer(help="Golden set, judges and experiments.", no_args_is_help=True)
+app.add_typer(eval_app, name="eval")
 
 console = Console()
 
@@ -221,3 +223,101 @@ def data_gen_internal(
         console.print(f"[red]KB validation failed:[/red] {exc}")
         raise typer.Exit(code=1) from exc
     console.print(f"{len(docs)} KB docs valid in {out_dir}")
+
+
+@eval_app.command("run")
+def eval_run(
+    config: Annotated[Path, typer.Option(help="Experiment YAML, e.g. configs/experiments/x.yaml.")],
+    split: Annotated[str, typer.Option(help="dev (tuning), test (reporting) or all.")] = "dev",
+    golden: Annotated[Path | None, typer.Option(help="Override the config's golden set.")] = None,
+) -> None:
+    """Evaluate one retrieval configuration and write experiments/<ts>_<name>_<split>/."""
+    import json
+
+    from docseek.core.acl import AccessPolicy
+    from docseek.core.models import Chunk, Section
+    from docseek.eval.golden import load_golden
+    from docseek.eval.runner import load_experiment, run_experiment
+    from docseek.ingest.pipeline import read_jsonl
+
+    if split not in ("dev", "test", "all"):
+        console.print(f"[red]--split must be dev, test or all, got {split!r}[/red]")
+        raise typer.Exit(code=1)
+    settings = Settings()
+    cfg = load_experiment(config)
+    golden_path = golden or cfg.golden
+    for path in (golden_path, cfg.processed_dir / "sections.jsonl"):
+        if not path.is_file():
+            console.print(
+                f"[red]missing {path}[/red] (run `docseek ingest` / build the golden set)"
+            )
+            raise typer.Exit(code=1)
+    run_dir = run_experiment(
+        cfg,
+        golden=load_golden(golden_path),
+        sections=read_jsonl(cfg.processed_dir / "sections.jsonl", Section),
+        chunks=read_jsonl(cfg.processed_dir / "chunks.jsonl", Chunk),
+        policy=AccessPolicy(load_principals(settings.configs_dir)),
+        split=cast(Literal["dev", "test", "all"], split),
+        experiments_dir=settings.experiments_dir,
+        golden_path=golden_path,
+    )
+    metrics = json.loads((run_dir / "metrics.json").read_text(encoding="utf-8"))
+    overall = metrics["overall"]
+    table = Table(title=f"{cfg.name} on {split} ({overall['n_queries']} queries)")
+    for col in ("metric", "mean", "95% CI", "n"):
+        table.add_column(col)
+    for name, v in overall.items():
+        if name == "n_queries":
+            continue
+        if "mean" in v:
+            table.add_row(
+                name, f"{v['mean']:.4f}", f"[{v['ci_low']:.4f}, {v['ci_high']:.4f}]", str(v["n"])
+            )
+        else:
+            table.add_row(name, f"total {v['total']}", f"max {v['max']}", "")
+    console.print(table)
+    console.print(f"-> {run_dir}")
+
+
+@eval_app.command("compare")
+def eval_compare(
+    run_a: Annotated[Path, typer.Argument(help="Baseline run directory (A).")],
+    run_b: Annotated[Path, typer.Argument(help="Candidate run directory (B).")],
+    metric: Annotated[
+        list[str] | None, typer.Option(help="Metrics to compare (default: all shared).")
+    ] = None,
+    top: Annotated[int, typer.Option(help="Biggest wins/losses to list.")] = 10,
+) -> None:
+    """Paired comparison of two runs: Δ, bootstrap CI, randomization p-value, top swings."""
+    from docseek.eval.runner import compare_runs
+
+    try:
+        rows, swings = compare_runs(run_a, run_b, metrics=metric)
+    except (ValueError, FileNotFoundError) as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=1) from exc
+    table = Table(title=f"B={run_b.name} vs A={run_a.name}")
+    for col in ("metric", "n", "A", "B", "Δ", "Δ 95% CI", "p", "verdict"):
+        table.add_column(col)
+    for r in rows:
+        table.add_row(
+            r.metric,
+            str(r.n),
+            f"{r.mean_a:.4f}",
+            f"{r.mean_b:.4f}",
+            f"{r.delta:+.4f}",
+            f"[{r.ci_low:+.4f}, {r.ci_high:+.4f}]",
+            f"{r.p_value:.4f}",
+            r.verdict,
+        )
+    console.print(table)
+    if swings and rows:
+        console.print(f"Biggest losses of B on {rows[0].metric}:")
+        for qid, qtype, d in swings[:top]:
+            if d < 0:
+                console.print(f"  {qid} ({qtype}) {d:+.4f}")
+        console.print(f"Biggest wins of B on {rows[0].metric}:")
+        for qid, qtype, d in reversed(swings[-top:]):
+            if d > 0:
+                console.print(f"  {qid} ({qtype}) {d:+.4f}")

@@ -1,0 +1,5 @@
+# Sanity check for the eval harness: returns the golden answer. Recall@10 should be 1.
+name: oracle
+retriever: { type: oracle }
+k: 10
+cutoffs: [1, 3, 5, 10]
