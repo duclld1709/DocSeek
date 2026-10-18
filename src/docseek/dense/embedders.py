@@ -30,7 +30,7 @@ class FastEmbedEmbedder:
         self,
         model_name: str,
         *,
-        batch_size: int = 32,
+        batch_size: int = 8,  # small batches suit DirectML; CPU speed is similar
         query_prefix: str = "",
         passage_prefix: str = "",
     ) -> None:
