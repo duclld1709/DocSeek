@@ -12,7 +12,8 @@ import argparse
 import json
 from pathlib import Path
 
-from docseek.eval.runner import compare_runs
+from docseek.eval.runner import compare_runs, load_per_query
+from docseek.eval.stats import compare_paired
 
 OVERALL = ("ndcg@10", "recall@10", "mrr@10", "hit@1")
 
@@ -69,6 +70,31 @@ def main() -> None:
             for t in qtypes
         ]
         print(f"| {name(run)} | " + " | ".join(cells) + " |")
+    if args.ref:
+        ref = load_per_query(args.ref)
+        for run in args.runs:
+            if run.resolve() == args.ref.resolve():
+                continue
+            other = load_per_query(run)
+            cells = []
+            for t in qtypes:
+                qids = [
+                    q
+                    for q in ref
+                    if ref[q]["qtype"] == t
+                    and args.metric in ref[q]["metrics"]
+                    and q in other
+                    and args.metric in other[q]["metrics"]
+                ]
+                if not qids:
+                    cells.append("-")
+                    continue
+                c = compare_paired(
+                    [ref[q]["metrics"][args.metric] for q in qids],
+                    [other[q]["metrics"][args.metric] for q in qids],
+                )
+                cells.append(f"{c.delta:+.3f} (p={c.p_value:.3f})")
+            print(f"| {name(run)} vs ref: delta (p) | " + " | ".join(cells) + " |")
 
 
 if __name__ == "__main__":

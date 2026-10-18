@@ -1,0 +1,3 @@
+# M3: dense retrieval, snowflake-arctic-embed-s (384d, query instruction prefix), Qdrant HNSW.
+name: dense_arctic_s
+retriever: { type: dense, model: snowflake/snowflake-arctic-embed-s }

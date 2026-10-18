@@ -20,15 +20,19 @@ spend_limits_usd:
   openai: 2.0
 
 # fastembed applies no query/passage prefixes; these follow each model card (M3).
+# On the dev laptop CPU a 33M-param encoder takes ~0.6 s per 400-token chunk, so M3 compares
+# two small models; nomic (137M) would take ~1 h per corpus embed.
 embedding:
   default: "BAAI/bge-small-en-v1.5"
-  candidates: ["BAAI/bge-small-en-v1.5", "nomic-ai/nomic-embed-text-v1.5", "BAAI/bge-base-en-v1.5"]
+  candidates:
+    ["BAAI/bge-small-en-v1.5", "snowflake/snowflake-arctic-embed-s", "BAAI/bge-base-en-v1.5"]
   prefixes:
     "BAAI/bge-small-en-v1.5":
       { query: "Represent this sentence for searching relevant passages: ", passage: "" }
     "BAAI/bge-base-en-v1.5":
       { query: "Represent this sentence for searching relevant passages: ", passage: "" }
-    "nomic-ai/nomic-embed-text-v1.5": { query: "search_query: ", passage: "search_document: " }
+    "snowflake/snowflake-arctic-embed-s":
+      { query: "Represent this sentence for searching relevant passages: ", passage: "" }
 
 reranker:
   default: "BAAI/bge-reranker-base"
