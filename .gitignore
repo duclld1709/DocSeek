@@ -1,0 +1,47 @@
+# --- Secrets (never commit) ---
+.env
+.env.*
+!.env.example
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+
+# --- Tooling caches ---
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# --- Data: only golden set, internal KB and scan ground truth are tracked ---
+data/*
+!data/golden/
+!data/internal_kb/
+!data/scans/
+data/scans/*
+!data/scans/ground_truth/
+
+# --- Indexes and run artifacts ---
+index/
+data/index/
+experiments/*
+!experiments/.gitkeep
+!experiments/baseline.json
+
+# --- Editors / OS ---
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db

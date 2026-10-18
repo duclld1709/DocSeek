@@ -1,0 +1,10 @@
+- Source of truth: PROJECT_SPEC.md. Đọc trước mỗi phiên. Làm đúng milestone hiện tại, không làm trước milestone sau.
+- Python 3.12 + uv. Lệnh: `uv run pytest`, `uv run ruff check . && uv run ruff format --check .`, `uv run mypy src`.
+- Không gọi LLM thật trong test; dùng fakes ở src/docseek/testing/fakes.py.
+- Mọi LLM call đi qua CachedLLMClient + BudgetGuard. Không hard-code tên model; dùng configs/models.yaml.
+- ACL phải được enforce ở tầng retriever/tool, không bao giờ chỉ dựa vào prompt.
+- Relevance chấm ở mức section_id; chunk được map về section khi eval.
+- Không bao giờ bịa số liệu trong docs/results hay README; chỉ ghi số từ experiments/.
+- Commit nhỏ theo Conventional Commits; mỗi milestone kết thúc bằng tag m{x}-<slug>.
+- Không commit .env, data/raw, index; giữ data/golden, data/internal_kb, data/scans/ground_truth.
+- Khi không chắc về một quyết định thiết kế có ảnh hưởng lớn: hỏi trước, sau đó ghi ADR.
