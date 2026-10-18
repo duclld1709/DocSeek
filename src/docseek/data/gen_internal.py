@@ -33,6 +33,7 @@ log = get_logger(__name__)
 
 _NUMBER_RE = re.compile(r"\d{4}-\d{2}-\d{2}|\d+(?:[.,:]\d+)*%?")
 _CODE_RE = re.compile(r"`([^`]+)`")
+_STRAY_ANCHOR_RE = re.compile(r"\{\s*#[\w-]+\s*\}")
 _TOKEN_RE = re.compile(r"\b[A-Za-z][A-Za-z0-9]*(?:[-_][A-Za-z0-9]+)+")
 MIN_WORDS, MAX_WORDS = 120, 700
 
@@ -114,6 +115,8 @@ def check_body(entry: KBPlanEntry, markdown: str) -> list[str]:
             continue
         m = HEADING_RE.match(line)
         if not m:
+            if _STRAY_ANCHOR_RE.search(line):
+                problems.append(f"anchor outside a heading: {line.strip()[-60:]!r}")
             continue
         if not ANCHOR_SUFFIX_RE.search(m["body"]):
             problems.append(f"heading without {{ #anchor }}: {line.strip()!r}")
@@ -144,6 +147,7 @@ Output rules:
 - Markdown only, no YAML front matter.
 - The first line is the H1 title followed by an anchor, e.g. `# Title {{ #title }}`.
 - Use 2-4 `## ` sections (optionally `### `). EVERY heading ends with `{{ #lowercase-slug }}`.
+- Anchors appear ONLY at the end of heading lines, never inside or after paragraphs.
 - 180-450 words in total.
 - State every required fact, keeping its numbers, names and identifiers exactly as given.
 - Do not add other numbers that contradict the required facts.

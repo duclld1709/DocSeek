@@ -144,6 +144,7 @@ def test_good_body_passes() -> None:
         (_body().replace("## Steps { #steps }", "## Steps"), "heading without"),
         (_body().replace("## Steps { #steps }", "Steps"), "at least two"),
         ("Intro\n" + _body(), "first line must be the H1"),
+        (_body().replace("10 seconds.", "10 seconds. { #overview }"), "anchor outside a heading"),
         ("# T { #t }\n## A { #a }\n## B { #b }\n10 `sec-alerts-critical` `Depends`", "length"),
     ],
 )
