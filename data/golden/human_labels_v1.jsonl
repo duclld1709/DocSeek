@@ -1,0 +1,100 @@
+{"pair_id":"p001","score":1,"note":"intro to OAuth2 scopes; says nothing about applying them to a router","annotator":"claude-opus-5-5"}
+{"pair_id":"p002","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p003","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p004","score":1,"note":"rate-limit overview without the burst number","annotator":"claude-opus-5-5"}
+{"pair_id":"p005","score":1,"note":"Acme template shows the Annotated Depends syntax, as an org convention","annotator":"claude-opus-5-5"}
+{"pair_id":"p006","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p007","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p008","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p009","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p010","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p011","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p012","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p013","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p014","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p015","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p016","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p017","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p018","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p019","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p020","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p021","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p022","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p023","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p024","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p025","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p026","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p027","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p028","score":1,"note":"says def and async def path operations can be mixed; not about dependencies","annotator":"claude-opus-5-5"}
+{"pair_id":"p029","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p030","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p031","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p032","score":1,"note":"superseded doc (20 connections) but gives the reason for the cap","annotator":"claude-opus-5-5"}
+{"pair_id":"p033","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p034","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p035","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p036","score":1,"note":"dependency basics, not sub-dependencies","annotator":"claude-opus-5-5"}
+{"pair_id":"p037","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p038","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p039","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p040","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p041","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p042","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p043","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p044","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p045","score":2,"note":"deprecated doc, but acknowledging the page is still how the chain stops","annotator":"claude-opus-5-5"}
+{"pair_id":"p046","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p047","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p048","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p049","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p050","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p051","score":1,"note":"FileResponse appears only inside an example","annotator":"claude-opus-5-5"}
+{"pair_id":"p052","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p053","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p054","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p055","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p056","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p057","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p058","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p059","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p060","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p061","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p062","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p063","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p064","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p065","score":1,"note":"lists SecurityScopes; nothing on nested behaviour","annotator":"claude-opus-5-5"}
+{"pair_id":"p066","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p067","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p068","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p069","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p070","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p071","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p072","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p073","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p074","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p075","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p076","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p077","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p078","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p079","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p080","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p081","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p082","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p083","score":1,"note":"handling of 429, a 4xx error, in the public API","annotator":"claude-opus-5-5"}
+{"pair_id":"p084","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p085","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p086","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p087","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p088","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p089","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p090","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p091","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p092","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p093","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p094","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p095","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p096","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p097","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p098","score":0,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p099","score":2,"note":null,"annotator":"claude-opus-5-5"}
+{"pair_id":"p100","score":1,"note":"mentions 400-series HTTPException in the refund API","annotator":"claude-opus-5-5"}
