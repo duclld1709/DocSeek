@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import contextlib
+import sys
 from pathlib import Path
 from typing import Annotated, Literal, cast
 
@@ -13,6 +15,7 @@ from docseek import __version__, doctor
 from docseek.core.config import Settings, load_corpus_config, load_models_config, load_principals
 from docseek.core.logging import configure_logging
 from docseek.data.fetch import FetchError, fetch_fastapi_docs
+from docseek.eval import human_cli
 
 app = typer.Typer(
     name="docseek",
@@ -24,6 +27,7 @@ data_app = typer.Typer(help="Fetch and generate corpora.", no_args_is_help=True)
 app.add_typer(data_app, name="data")
 eval_app = typer.Typer(help="Golden set, judges and experiments.", no_args_is_help=True)
 app.add_typer(eval_app, name="eval")
+human_cli.register(eval_app)
 
 console = Console()
 
@@ -50,7 +54,17 @@ def main(
         ),
     ] = False,
 ) -> None:
+    _tolerate_unencodable_output()
     configure_logging(log_level.upper())
+
+
+def _tolerate_unencodable_output() -> None:
+    """Docs contain characters a Windows cp1252 console cannot print; replace, never crash."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            with contextlib.suppress(ValueError, OSError):
+                reconfigure(errors="replace")
 
 
 @app.command("doctor")
@@ -289,7 +303,7 @@ def eval_compare(
     ] = None,
     top: Annotated[int, typer.Option(help="Biggest wins/losses to list.")] = 10,
 ) -> None:
-    """Paired comparison of two runs: Δ, bootstrap CI, randomization p-value, top swings."""
+    """Paired comparison of two runs: delta, bootstrap CI, randomization p-value, top swings."""
     from docseek.eval.runner import compare_runs
 
     try:
@@ -298,7 +312,7 @@ def eval_compare(
         console.print(f"[red]{exc}[/red]")
         raise typer.Exit(code=1) from exc
     table = Table(title=f"B={run_b.name} vs A={run_a.name}")
-    for col in ("metric", "n", "A", "B", "Δ", "Δ 95% CI", "p", "verdict"):
+    for col in ("metric", "n", "A", "B", "delta", "delta 95% CI", "p", "verdict"):
         table.add_column(col)
     for r in rows:
         table.add_row(
