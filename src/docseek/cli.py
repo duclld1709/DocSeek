@@ -181,6 +181,9 @@ def data_gen_internal(
         list[str] | None, typer.Option(help="Only these KB ids (repeatable), e.g. kb-0001.")
     ] = None,
     workers: Annotated[int, typer.Option(min=1, max=16, help="Parallel LLM calls.")] = 4,
+    max_attempts: Annotated[
+        int, typer.Option(min=1, max=10, help="Tries per doc (each retry gets feedback).")
+    ] = 3,
 ) -> None:
     """Generate Corpus B (Acme internal KB) from configs/internal_kb_plan.yaml."""
     from docseek.core.runs import environment_info, make_run_dir, write_json
@@ -204,7 +207,13 @@ def data_gen_internal(
     llm = build_llm_client(settings, Tracer(JsonlTraceSink(traces)))
     out_dir = corpus.internal_kb.dir
     results = generate_internal_kb(
-        plan, llm=llm, role=role, out_dir=out_dir, force=force, workers=workers
+        plan,
+        llm=llm,
+        role=role,
+        out_dir=out_dir,
+        force=force,
+        workers=workers,
+        max_attempts=max_attempts,
     )
     events = read_traces(traces) if traces.exists() else []
     cost = summarize_llm_costs(events)

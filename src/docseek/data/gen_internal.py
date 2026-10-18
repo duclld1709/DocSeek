@@ -108,6 +108,8 @@ def check_body(entry: KBPlanEntry, markdown: str) -> list[str]:
         problems.append("the first line must be the H1 title")
     if lines and lines[0].strip() == "---":
         problems.append("do not include YAML front matter")
+    if re.search(r"\S[ \t]+#{2,6} \S", markdown):
+        problems.append("put every heading on its own line, with blank lines around it")
     fences = FenceTracker()
     n_h2 = 0
     for line in lines:
@@ -155,8 +157,10 @@ Output rules:
 
 
 def build_messages(
-    entry: KBPlanEntry, company: str, problems: list[str] | None = None
+    entry: KBPlanEntry, company: str, problems: list[str] | None = None, attempt: int = 1
 ) -> list[dict[str, Any]]:
+    """Prompt for one document; retries carry the previous problems and the attempt number
+    (so each attempt has its own cache key, even when the problems repeat)."""
     facts = "\n".join(f"- {f}" for f in entry.facts)
     parts = [
         f"Document type: {entry.doc_type}",
@@ -183,7 +187,8 @@ def build_messages(
         messages.append(
             {
                 "role": "user",
-                "content": f"Your previous draft had these problems:\n{fix}\nWrite it again.",
+                "content": f"Attempt {attempt}. Your previous draft had these problems:\n"
+                f"{fix}\nWrite it again.",
             }
         )
     return messages
@@ -225,7 +230,7 @@ def generate_document(
 ) -> GenResult:
     problems: list[str] = []
     for attempt in range(1, max_attempts + 1):
-        messages = build_messages(entry, company, problems or None)
+        messages = build_messages(entry, company, problems or None, attempt)
         try:
             resp = llm.complete(
                 messages,

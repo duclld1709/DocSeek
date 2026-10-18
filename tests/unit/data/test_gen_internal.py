@@ -145,6 +145,7 @@ def test_good_body_passes() -> None:
         (_body().replace("## Steps { #steps }", "Steps"), "at least two"),
         ("Intro\n" + _body(), "first line must be the H1"),
         (_body().replace("10 seconds.", "10 seconds. { #overview }"), "anchor outside a heading"),
+        (_body().replace("\n\n## Steps", " ## Steps"), "own line"),
         ("# T { #t }\n## A { #a }\n## B { #b }\n10 `sec-alerts-critical` `Depends`", "length"),
     ],
 )
@@ -169,6 +170,8 @@ def test_build_messages_lists_facts_refs_and_feedback() -> None:
     user = msgs[1]["content"]
     assert all(f in user for f in ENTRY.facts) and "`Depends`" in user
     assert "fact not stated exactly: x" in msgs[2]["content"]
+    again = build_messages(ENTRY, "Acme Payments", ["fact not stated exactly: x"], attempt=3)
+    assert again[2]["content"].startswith("Attempt 3.") and again != msgs
     assert len(build_messages(ENTRY, "Acme Payments")) == 2
 
 
