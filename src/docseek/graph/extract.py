@@ -142,6 +142,13 @@ def parse_release_notes(
     return out
 
 
+# Words the concept LLM sometimes returns that carry no topic (Python keywords, glue words).
+_STOP = (
+    "with from import as def class async await return yield python fastapi str int dict list "
+    "none true false self app code example file data value type function"
+)
+CONCEPT_STOPLIST = frozenset(_STOP.split())
+
 ConceptFn = Callable[[str, str], list[str]]
 """(page title, page text) -> concept names."""
 
@@ -153,6 +160,7 @@ def build_graph(
     release_notes: str | None = None,
     concept_fn: ConceptFn | None = None,
     max_concept_pages: int = 0,
+    max_concept_df: float = 0.05,
 ) -> GraphData:
     g = GraphData()
     vocab: dict[str, str] = {}
@@ -234,10 +242,26 @@ def build_graph(
                 c = normalize_concept(raw)
                 if 3 <= len(c) <= 40:
                     concepts.add(c)
-        for c in concepts:
-            g.node("Concept", c, name=c)
+        # Entity resolution / pruning: drop glue words, concepts that are API names, and
+        # concepts so common (> max_concept_df of sections) that they cannot discriminate.
+        concepts = {
+            c
+            for c in concepts
+            if c not in CONCEPT_STOPLIST and c.replace(" ", "") not in vocab and len(c) >= 4
+        }
+        mentions = {
+            s.section_id: concept_mentions(f"{s.title}\n{s.text}", concepts) for s in sections
+        }
+        df: defaultdict[str, int] = defaultdict(int)
+        for found in mentions.values():
+            for c in found:
+                df[c] += 1
+        limit = max_concept_df * len(sections)
+        kept = {c for c in concepts if 0 < df[c] <= limit}
+        for c in kept:
+            g.node("Concept", c, name=c, df=df[c])
         for s in sections:
-            for c in concept_mentions(f"{s.title}\n{s.text}", concepts):
+            for c in mentions[s.section_id] & kept:
                 g.edge(("Section", s.section_id), "MENTIONS", ("Concept", c))
                 if s.source == "internal-kb":
                     g.edge(("KBDoc", s.doc_id), "REFERENCES", ("Concept", c))

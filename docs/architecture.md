@@ -103,6 +103,33 @@ caller --> CachedLLMClient --(miss)--> BudgetGuard (per run) --> SpendLedger (pe
   with bootstrap CIs and randomization p-values. Random and Oracle retrievers check the
   harness itself. Relevance is per section (ADR 0002).
 
+## Knowledge graph and filesystem view (M6)
+
+Neo4j schema (`src/docseek/graph/schema.py`):
+
+```
+(:Page {doc_id, title, doc_type, source, acl})   (:Section {section_id, doc_id, title, path, acl, status})
+(:APIElement {name, kind, module})               (:Concept {name, df})
+(:CodeExample {path})                            (:Version {name, date})
+(:KBDoc {doc_id, acl, status, updated_at, version})
+
+(Section)-[:PART_OF]->(Page)        (Page)-[:LINKS_TO]->(Page)
+(Section)-[:MENTIONS]->(APIElement|Concept)
+(Section)-[:SHOWS]->(CodeExample)   (CodeExample)-[:USES]->(APIElement)
+(APIElement)-[:CHANGED_IN]->(Version)
+(KBDoc)-[:SUPERSEDES]->(KBDoc)      (KBDoc)-[:REFERENCES]->(APIElement|Concept)
+```
+
+- Built by `docseek graph build [--concept-pages N]` from `sections.jsonl`, the AST of
+  `docs_src/*.py` (APIElement vocabulary and USES), release notes (Version, CHANGED_IN) and,
+  optionally, cached LLM concept extraction (query role, local Ollama).
+- `GraphRetriever` links query text to node names and runs only the fixed, parameterised
+  Cypher templates in `graph/graph_retriever.py` (ADR 0006); ACL is filtered in Cypher on
+  `Section.acl`/`KBDoc.acl` and re-checked on chunk metadata.
+- `docseek project` writes `data/projected/<source>/<path>.md` (headings + `<!-- section_id -->`)
+  and `_manifest.json`; `fs/tools.py` serves `ls/find/grep/cat` confined to that root, hides
+  files the principal cannot read and renders `_index.md` per principal.
+
 ## Cross-cutting rules
 
 - **ACL is enforced in retrievers and tools**, from the server-side principal

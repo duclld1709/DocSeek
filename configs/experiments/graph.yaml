@@ -1,0 +1,6 @@
+# M6: graph retriever alone (entity linking + 4 Cypher templates).
+name: graph
+chunks_file: chunks_section_ctx.jsonl
+retriever:
+  type: graph
+  per_template: 30

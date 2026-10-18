@@ -1,0 +1,42 @@
+# M6 final: fresh_ctx + graph (weight 0.2, only for queries linking >= 2 entities); tuned on dev.
+name: hybrid_graph_w
+chunks_file: chunks_section_ctx.jsonl
+retriever:
+  type: hybrid
+  method: weighted
+  norm: minmax
+  weights:
+    hybrid: 0.8
+    graph: 0.2
+  depth: 50
+  children:
+    hybrid:
+      type: freshness
+      beta: 0.0
+      tau_days: 180
+      deprecated_penalty: 0.0
+      superseded_penalty: 0.5
+      depth: 50
+      inner:
+        type: hybrid
+        method: weighted
+        norm: minmax
+        alpha: 0.3
+        depth: 50
+        children:
+          bm25:
+            type: bm25
+            k1: 1.5
+            b: 0.5
+            fields:
+              title: 2.0
+              section_path: 0.5
+              body: 1.0
+              code: 0.5
+          dense:
+            type: dense
+            model: BAAI/bge-small-en-v1.5
+    graph:
+      type: graph
+      per_template: 30
+      min_entities: 2

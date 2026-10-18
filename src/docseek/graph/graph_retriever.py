@@ -81,6 +81,10 @@ def neo4j_runner(driver: Any, database: str | None = None) -> CypherRunner:
     return run
 
 
+def _compound(name: str) -> bool:
+    return "_" in name or bool(re.search(r"[a-z][A-Z]|[A-Z]{2,}[a-z]", name))
+
+
 class EntityLinker:
     """Exact (case-insensitive) and fuzzy matching of query text to graph node names."""
 
@@ -92,9 +96,14 @@ class EntityLinker:
     def link(self, text: str) -> list[str]:
         found: list[str] = []
         for tok in _IDENT.findall(text):
-            key = normalize_api(tok).lower()
+            norm = normalize_api(tok)
+            key = norm.lower()
             if key in self._api:
-                found.append(self._api[key])
+                name = self._api[key]
+                # A one-word API name (Header, Path, Security) also is an English word: only
+                # link it when written with the API's exact casing.
+                if _compound(name) or norm == name:
+                    found.append(name)
             elif len(key) >= 6:
                 close = difflib.get_close_matches(key, list(self._api), n=1, cutoff=self._fuzzy)
                 if close:
@@ -116,7 +125,9 @@ class GraphRetriever:
         *,
         per_template: int = 30,
         templates: Sequence[str] = tuple(TEMPLATES),
+        min_entities: int = 1,
     ) -> None:
+        self._min_entities = min_entities
         self._run = run
         self._linker = linker
         self._policy = policy
@@ -129,8 +140,8 @@ class GraphRetriever:
     def search(self, query: Query, k: int) -> list[ScoredHit]:
         groups = sorted(self._policy.groups(query.principal))  # unknown principal raises
         names = self._linker.link(query.text)
-        if not names:
-            return []
+        if len(names) < max(1, self._min_entities):
+            return []  # e.g. min_entities=2: only multi-entity (multi-hop style) queries
         score: defaultdict[str, float] = defaultdict(float)
         via: defaultdict[str, dict[str, list[str]]] = defaultdict(dict)
         for t in self._templates:
@@ -188,4 +199,5 @@ def build_graph_retriever(
         policy,
         per_template=int(opts.get("per_template", 30)),
         templates=list(opts.get("templates") or TEMPLATES),
+        min_entities=int(opts.get("min_entities", 1)),
     )
