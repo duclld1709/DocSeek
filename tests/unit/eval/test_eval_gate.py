@@ -29,6 +29,7 @@ CONFIGS: dict[str, dict] = {
         "index_dir": None,
     },
     "tfidf": {"type": "tfidf", "index_dir": None},
+    "dense_hash": {"type": "dense", "embedder": "hash", "location": ":memory:"},
 }
 
 

@@ -112,13 +112,26 @@ def _lexical(kind: str) -> RetrieverFactory:
     return factory
 
 
-# Later milestones register dense, hybrid... here.
+def _dense(
+    cfg: RetrieverConfig,
+    chunks: list[Chunk],
+    _g: list[GoldenQuery],
+    policy: AccessPolicy,
+    _seed: int,
+) -> Retriever:
+    from docseek.dense.retriever import build_dense
+
+    return build_dense(cfg.model_dump(exclude={"type"}), chunks, policy)
+
+
+# Later milestones register hybrid... here.
 RETRIEVERS: dict[str, RetrieverFactory] = {
     "random": _random,
     "oracle": _oracle,
     "bm25": _lexical("bm25"),
     "tfidf": _lexical("tfidf"),
     "bm25s": _lexical("bm25s"),
+    "dense": _dense,
 }
 
 

@@ -149,9 +149,19 @@ class LLMConfig(_YamlModel):
         return self
 
 
+class Prefixes(_YamlModel):
+    query: str = ""
+    passage: str = ""
+
+
 class ModelChoice(_YamlModel):
     default: str
     candidates: list[str] = Field(default_factory=list)
+    # Model-card instruction prefixes for embedding models (query vs passage side).
+    prefixes: dict[str, Prefixes] = Field(default_factory=dict)
+
+    def prefixes_for(self, model: str) -> Prefixes:
+        return self.prefixes.get(model, Prefixes())
 
     @model_validator(mode="after")
     def _default_in_candidates(self) -> Self:
