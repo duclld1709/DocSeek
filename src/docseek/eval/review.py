@@ -40,6 +40,7 @@ class ReviewDecision(BaseModel):
     text: str | None = None  # new text for "edit"
     qtype: QueryType | None = None  # corrected qtype for "edit"
     relevant: dict[str, int] | None = None  # replaced relevance for "edit"
+    reference_answer: str | None = None  # corrected reference answer for "edit"
     note: str | None = None
     # Who decided: "human" for the project owner, a model id when delegated to an assistant.
     annotator: str = "human"
@@ -98,6 +99,10 @@ def apply_decisions(
                 update["lexical_overlap"] = None  # stale after an edit; recomputed on build
             if d.relevant is not None:
                 update["relevant"] = d.relevant
+                # A hard negative promoted to relevant is no longer a hard negative.
+                update["hard_negatives"] = [h for h in q.hard_negatives if h not in d.relevant]
+            if d.reference_answer:
+                update["reference_answer"] = d.reference_answer
             if d.note:
                 update["notes"] = d.note
             out.append(GoldenQuery.model_validate({**q.model_dump(), **update}))

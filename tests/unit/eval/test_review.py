@@ -259,3 +259,17 @@ def test_assistant_annotations_are_recorded_and_qtype_can_be_fixed() -> None:
     assert out.qtype == QueryType.HOWTO and out.annotator == "claude-x" and out.reviewed
     (acc,) = apply_decisions([q], {"q0006": ReviewDecision(qid="q0006", action="accept")})
     assert acc.annotator == "human"
+
+
+def test_promoting_a_hard_negative_to_relevant_removes_it_from_hard_negatives() -> None:
+    q = next(q for q in GOLDEN if q.qid == "q0004")
+    hn = q.hard_negatives[0]
+    d = ReviewDecision(
+        qid="q0004",
+        action="edit",
+        relevant={**q.relevant, hn: 1},
+        reference_answer="new answer",
+    )
+    (out,) = apply_decisions([q], {"q0004": d})
+    assert out.relevant[hn] == 1 and hn not in out.hard_negatives
+    assert out.reference_answer == "new answer"
