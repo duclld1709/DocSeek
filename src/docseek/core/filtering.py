@@ -13,7 +13,7 @@ from typing import Any
 from docseek.core.models import MetadataFilter
 
 
-def _as_datetime(value: Any) -> datetime | None:
+def as_datetime(value: Any) -> datetime | None:
     if value is None or value == "":
         return None
     dt = value if isinstance(value, datetime) else datetime.fromisoformat(str(value))
@@ -38,7 +38,7 @@ def matches_filter(metadata: Mapping[str, Any], flt: MetadataFilter | None) -> b
     if flt.version is not None and metadata.get("version") != flt.version:
         return False
     if flt.updated_after is not None or flt.updated_before is not None:
-        updated = _as_datetime(metadata.get("updated_at"))
+        updated = as_datetime(metadata.get("updated_at"))
         if updated is None:
             return False
         if flt.updated_after is not None and updated < _aware(flt.updated_after):
