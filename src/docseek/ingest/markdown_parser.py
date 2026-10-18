@@ -22,6 +22,7 @@ from datetime import datetime
 
 from docseek.core.ids import make_doc_id, make_section_id
 from docseek.core.models import Provenance, Section
+from docseek.ingest import normalize
 from docseek.ingest.includes import INCLUDE_RE, CodeIncludeResolver
 
 FENCE_RE = re.compile(r"^(?P<indent>[ \t]*)(?P<fence>`{3,}|~{3,})(?P<info>.*)$")
@@ -219,7 +220,7 @@ def parse_page(
     doc_id = make_doc_id(meta.source, rel_path)
     page = ParsedPage(doc_id=doc_id, sections=[])
     for raw in split_sections(lines, rel_path):
-        body, code_refs = _render_body(raw.body, includes, page.issues)
+        body = _render_body(raw.body, includes, page.issues, rel_path=rel_path, source=meta.source)
         page.sections.append(
             Section(
                 section_id=make_section_id(doc_id, raw.anchor),
@@ -228,8 +229,9 @@ def parse_page(
                 title=raw.title,
                 anchor=raw.anchor,
                 section_path=raw.path,
-                text=_tidy("\n".join(body)),
-                code_refs=code_refs,
+                text=_tidy("\n".join(body.lines)),
+                code_refs=body.code_refs,
+                links=[link for link in body.links if link != make_section_id(doc_id, raw.anchor)],
                 doc_type=meta.doc_type,
                 acl=list(meta.acl),
                 updated_at=meta.updated_at,
@@ -244,34 +246,73 @@ def parse_page(
     return page
 
 
+@dataclass
+class _RenderedBody:
+    lines: list[str] = field(default_factory=list)
+    code_refs: list[str] = field(default_factory=list)
+    links: list[str] = field(default_factory=list)
+
+
 def _render_body(
     body: list[tuple[int, str]],
     includes: CodeIncludeResolver | None,
     issues: list[ParseIssue],
-) -> tuple[list[str], list[str]]:
-    """Turn raw section lines into index text; returns (lines, code_refs)."""
-    out: list[str] = []
-    code_refs: list[str] = []
+    *,
+    rel_path: str,
+    source: str,
+) -> _RenderedBody:
+    """Turn raw section lines into index text, collecting code refs and internal links."""
+    out = _RenderedBody()
     fences = FenceTracker()  # sections always start outside a fence
+    in_directive_options = False
     for lineno, line in body:
+        was_inside = fences.inside
         if fences.feed(line):
-            out.append(line)
+            if was_inside and fences.inside and normalize.is_console_fence(fences.info):
+                line = normalize.strip_console_markup(line)
+            out.lines.append(line)
             continue
+        if in_directive_options and line[:1] in (" ", "\t"):
+            continue  # indented `options:` block of a mkdocstrings directive
+        in_directive_options = False
         m = INCLUDE_RE.match(line)
         if m:
-            if includes is None:
-                issues.append(ParseIssue("include-unresolved", lineno, m["path"]))
-                out.append(f"(code include: {m['path']})")
-                continue
-            resolved = includes.resolve(m["path"], m["opts"])
-            if resolved.issue:
-                issues.append(ParseIssue(f"include-{resolved.issue}", lineno, m["path"]))
-            if resolved.code_ref and resolved.code_ref not in code_refs:
-                code_refs.append(resolved.code_ref)
-            out.extend(resolved.lines)
+            _include(out, includes, issues, lineno, m["path"], m["opts"])
             continue
-        out.append(line)
-    return out, code_refs
+        directive = normalize.mkdocstrings_line(line)
+        if directive is not None:
+            out.lines.append(directive)
+            in_directive_options = True
+            continue
+        admonition = normalize.admonition_line(line)
+        if admonition is not None:
+            out.lines.append(admonition)
+            continue
+        for link in normalize.extract_links(line, rel_path=rel_path, source=source):
+            if link not in out.links:
+                out.links.append(link)
+        out.lines.append(normalize.normalize_inline(line))
+    return out
+
+
+def _include(
+    out: _RenderedBody,
+    includes: CodeIncludeResolver | None,
+    issues: list[ParseIssue],
+    lineno: int,
+    path: str,
+    opts: str,
+) -> None:
+    if includes is None:
+        issues.append(ParseIssue("include-unresolved", lineno, path))
+        out.lines.append(f"(code include: {path})")
+        return
+    resolved = includes.resolve(path, opts)
+    if resolved.issue:
+        issues.append(ParseIssue(f"include-{resolved.issue}", lineno, path))
+    if resolved.code_ref and resolved.code_ref not in out.code_refs:
+        out.code_refs.append(resolved.code_ref)
+    out.lines.extend(resolved.lines)
 
 
 def _tidy(text: str) -> str:
