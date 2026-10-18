@@ -58,6 +58,10 @@ def configure_logging(
 
 
 def get_logger(name: str) -> structlog.typing.FilteringBoundLogger:
-    """Return a logger bound with ``logger=<name>``."""
-    logger: structlog.typing.FilteringBoundLogger = structlog.get_logger().bind(logger=name)
+    """Return a lazy logger bound with ``logger_name=<name>``.
+
+    Safe at import time: the logger is only built on first use, so it picks up whatever
+    ``configure_logging`` set up by then (calling ``.bind()`` here would freeze defaults).
+    """
+    logger: structlog.typing.FilteringBoundLogger = structlog.get_logger(logger_name=name)
     return logger

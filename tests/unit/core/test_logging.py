@@ -25,7 +25,7 @@ def test_emits_json_with_level_timestamp_and_logger() -> None:
     assert record["event"] == "indexed"
     assert record["n_chunks"] == 3
     assert record["level"] == "info"
-    assert record["logger"] == "docseek.test"
+    assert record["logger_name"] == "docseek.test"
     assert "timestamp" in record
 
 
@@ -58,3 +58,12 @@ def test_trace_id_from_contextvars() -> None:
         get_logger("t").info("step")
 
     assert _lines(stream)[0]["trace_id"] == "tr-1"
+
+
+def test_logger_created_before_configure_uses_later_config() -> None:
+    early = get_logger("early")  # like a module-level logger created at import time
+    stream = _capture("WARNING")
+    early.info("hidden")
+    early.warning("shown")
+
+    assert [(r["event"], r["logger_name"]) for r in _lines(stream)] == [("shown", "early")]
