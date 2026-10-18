@@ -47,6 +47,7 @@ def retriever() -> GraphRetriever:
         release_notes=NOTES,
         concept_fn=lambda t, x: ["timeout", "dependency injection"],
         max_concept_pages=50,
+        max_concept_df=1.0,  # tiny fixture corpus: keep every concept
     )
     driver = connect_neo4j()
     load_graph(driver, g, wipe=True)
