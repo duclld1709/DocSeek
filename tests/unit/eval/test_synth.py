@@ -74,6 +74,8 @@ class RuleLLM:
                 "items": [
                     {"query": "connect fastapi to zebracorn queues", "keywords": ["zebracorn"]},
                     {"query": "fastapi graphql thing", "keywords": ["fastapi"]},  # in corpus
+                    # common word + absent word: no section has both, so it is kept
+                    {"query": "fastapi with blorbdb", "keywords": ["fastapi", "blorbdb"]},
                     {"query": "deploy on quuxcloud lambdas", "keywords": ["quuxcloud"]},
                 ]
             }
@@ -198,6 +200,9 @@ def test_freshness_points_at_new_doc_with_old_as_stale(result) -> None:  # type:
 def test_unanswerable_queries_drop_keywords_found_in_corpus(result) -> None:  # type: ignore[no-untyped-def]
     texts = {q.text for q in result.queries if q.qtype == QueryType.UNANSWERABLE}
     assert "fastapi graphql thing" not in texts and texts
+    # Each of the 4 theme calls returns 4 items and exactly one ("fastapi") is rejected:
+    # "fastapi" + "blorbdb" never co-occur in a section, so that one survives.
+    assert result.report["stats"]["unanswerable_keyword_in_corpus"] == 4
     assert result.report["stats"]["unanswerable_keyword_in_corpus"] >= 1
 
 

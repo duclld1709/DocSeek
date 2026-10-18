@@ -501,9 +501,16 @@ def generate_permission(ctx: SynthContext, n: int) -> list[Unit]:
 
 
 def generate_unanswerable(ctx: SynthContext, n: int) -> list[Unit]:
-    corpus_text = "\n".join(f"{s.title}\n{s.text}" for s in ctx.sections).lower()
+    section_texts = [f"{s.title}\n{s.text}".lower() for s in ctx.sections]
     kb_titles = "; ".join(sorted({d.title for d in ctx.plan.docs}))
-    per_theme = int(np.ceil(n / len(UNANSWERABLE_THEMES)))
+    # Ask for twice as many: the corpus check below rejects a good share of them.
+    per_theme = int(np.ceil(2 * n / len(UNANSWERABLE_THEMES)))
+
+    def answered_somewhere(keywords: list[str]) -> bool:
+        """A section mentioning *all* the answer keywords may well answer the query.
+        (Requiring only one would reject common words such as "kubernetes".)"""
+        kws = [k for k in keywords if k]
+        return bool(kws) and any(all(k in text for k in kws) for text in section_texts)
 
     def one(job: tuple[str, str]) -> list[Unit]:
         theme, principal = job
@@ -522,7 +529,7 @@ def generate_unanswerable(ctx: SynthContext, n: int) -> list[Unit]:
             text, keywords = item["query"].strip(), [k.lower() for k in item["keywords"]]
             if not _valid_query(text):
                 continue
-            if any(k and k in corpus_text for k in keywords):
+            if answered_somewhere(keywords):
                 ctx.stats["unanswerable_keyword_in_corpus"] += 1
                 continue
             units.append(
