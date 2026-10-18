@@ -22,6 +22,7 @@ from datetime import datetime
 
 from docseek.core.ids import make_doc_id, make_section_id
 from docseek.core.models import Provenance, Section
+from docseek.ingest.includes import INCLUDE_RE, CodeIncludeResolver
 
 FENCE_RE = re.compile(r"^(?P<indent>[ \t]*)(?P<fence>`{3,}|~{3,})(?P<info>.*)$")
 HEADING_RE = re.compile(r"^(?P<hashes>#{1,6})[ \t]+(?P<body>.+?)[ \t]*$")
@@ -41,6 +42,22 @@ class PageMeta:
     version: int | None = None
     status: str = "active"
     supersedes: str | None = None
+
+
+@dataclass(frozen=True)
+class ParseIssue:
+    """Something the parser could not handle as written (reported, never silently dropped)."""
+
+    kind: str
+    line: int
+    detail: str
+
+
+@dataclass
+class ParsedPage:
+    doc_id: str
+    sections: list[Section]
+    issues: list[ParseIssue] = field(default_factory=list)
 
 
 @dataclass
@@ -186,7 +203,8 @@ def parse_page(
     rel_path: str,
     meta: PageMeta,
     provenance_file: str,
-) -> list[Section]:
+    includes: CodeIncludeResolver | None = None,
+) -> ParsedPage:
     """Parse one markdown page into sections.
 
     Args:
@@ -194,13 +212,15 @@ def parse_page(
         rel_path: Path relative to the source root (becomes part of ``doc_id``).
         meta: Page-level metadata (source, doc_type, ACL, freshness).
         provenance_file: Path recorded in provenance (relative to the source repo).
+        includes: Resolver for ``{* ... *}`` code includes. Without one, includes are
+            reported as issues and replaced by a placeholder.
     """
     lines = text.splitlines()
     doc_id = make_doc_id(meta.source, rel_path)
-    sections: list[Section] = []
+    page = ParsedPage(doc_id=doc_id, sections=[])
     for raw in split_sections(lines, rel_path):
-        body = "\n".join(line for _, line in raw.body)
-        sections.append(
+        body, code_refs = _render_body(raw.body, includes, page.issues)
+        page.sections.append(
             Section(
                 section_id=make_section_id(doc_id, raw.anchor),
                 doc_id=doc_id,
@@ -208,7 +228,8 @@ def parse_page(
                 title=raw.title,
                 anchor=raw.anchor,
                 section_path=raw.path,
-                text=_tidy(body),
+                text=_tidy("\n".join(body)),
+                code_refs=code_refs,
                 doc_type=meta.doc_type,
                 acl=list(meta.acl),
                 updated_at=meta.updated_at,
@@ -220,10 +241,47 @@ def parse_page(
                 ),
             )
         )
-    return sections
+    return page
+
+
+def _render_body(
+    body: list[tuple[int, str]],
+    includes: CodeIncludeResolver | None,
+    issues: list[ParseIssue],
+) -> tuple[list[str], list[str]]:
+    """Turn raw section lines into index text; returns (lines, code_refs)."""
+    out: list[str] = []
+    code_refs: list[str] = []
+    fences = FenceTracker()  # sections always start outside a fence
+    for lineno, line in body:
+        if fences.feed(line):
+            out.append(line)
+            continue
+        m = INCLUDE_RE.match(line)
+        if m:
+            if includes is None:
+                issues.append(ParseIssue("include-unresolved", lineno, m["path"]))
+                out.append(f"(code include: {m['path']})")
+                continue
+            resolved = includes.resolve(m["path"], m["opts"])
+            if resolved.issue:
+                issues.append(ParseIssue(f"include-{resolved.issue}", lineno, m["path"]))
+            if resolved.code_ref and resolved.code_ref not in code_refs:
+                code_refs.append(resolved.code_ref)
+            out.extend(resolved.lines)
+            continue
+        out.append(line)
+    return out, code_refs
 
 
 def _tidy(text: str) -> str:
-    """Strip trailing spaces and collapse runs of blank lines."""
-    lines = [line.rstrip() for line in text.splitlines()]
-    return re.sub(r"\n{3,}", "\n\n", "\n".join(lines)).strip()
+    """Strip trailing spaces and collapse runs of blank lines outside fenced code."""
+    out: list[str] = []
+    fences = FenceTracker()
+    for line in text.splitlines():
+        line = line.rstrip()
+        in_code = fences.inside
+        keep_blank = bool(out and out[-1])
+        if (fences.feed(line) and in_code) or line or keep_blank:
+            out.append(line)
+    return "\n".join(out).strip()

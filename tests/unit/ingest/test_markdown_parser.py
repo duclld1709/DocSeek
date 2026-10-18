@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from docseek.ingest.includes import CodeIncludeResolver
 from docseek.ingest.markdown_parser import (
     FenceTracker,
     PageMeta,
@@ -19,14 +20,21 @@ META = PageMeta(source="fastapi-docs", doc_type="tutorial", acl=("public",))
 
 
 def _parse(text: str, rel_path: str = "tutorial/page.md") -> list:
-    return parse_page(text, rel_path=rel_path, meta=META, provenance_file=f"docs/{rel_path}")
+    page = parse_page(text, rel_path=rel_path, meta=META, provenance_file=f"docs/{rel_path}")
+    return page.sections
 
 
 def _mini(rel_path: str) -> list:
     text = (MINI_DOCS / rel_path).read_text(encoding="utf-8")
-    return parse_page(
-        text, rel_path=rel_path, meta=META, provenance_file=f"docs/en/docs/{rel_path}"
+    includes = CodeIncludeResolver(repo_root=MINI_ROOT, mkdocs_dir=MINI_ROOT / "docs" / "en")
+    page = parse_page(
+        text,
+        rel_path=rel_path,
+        meta=META,
+        provenance_file=f"docs/en/docs/{rel_path}",
+        includes=includes,
     )
+    return page.sections
 
 
 def test_anchor_suffix_is_split_into_title_and_anchor() -> None:
