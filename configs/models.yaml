@@ -46,3 +46,8 @@ embedding:
 reranker:
   default: "BAAI/bge-reranker-base"
   candidates: ["BAAI/bge-reranker-base", "cross-encoder/ms-marco-MiniLM-L-6-v2"]
+
+# OCR (M7). RapidOCR ships only a Chinese recogniser, which drops spaces in English text; the
+# English PP-OCRv3 recogniser comes from the RapidOCR model repo on the Hugging Face Hub.
+ocr:
+  rapidocr_rec: { repo: "SWHL/RapidOCR", file: "PP-OCRv3/en_PP-OCRv3_rec_infer.onnx" }
