@@ -200,6 +200,19 @@ def search_cmd(
     console.print(table)
 
 
+@app.command("project")
+def project_cmd(
+    out: Annotated[Path, typer.Option(help="Output directory.")] = Path("data/projected"),
+) -> None:
+    """Write the markdown projection used by the FS tools (one file per page)."""
+    from docseek.core.models import Section
+    from docseek.ingest.pipeline import read_jsonl
+    from docseek.ingest.projection import project
+
+    manifest = project(read_jsonl(Path("data/processed/sections.jsonl"), Section), out)
+    console.print(f"{len(manifest['files'])} files -> {out}")
+
+
 @graph_app.command("build")
 def graph_build(
     concept_pages: Annotated[

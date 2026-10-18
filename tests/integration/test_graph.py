@@ -45,7 +45,7 @@ def retriever() -> GraphRetriever:
         RESULT.sections,
         load_code_files(root / "docs_src", root),
         release_notes=NOTES,
-        concept_fn=lambda t, x: ["payment timeout", "dependency injection"],
+        concept_fn=lambda t, x: ["timeout", "dependency injection"],
         max_concept_pages=50,
     )
     driver = connect_neo4j()
@@ -54,14 +54,14 @@ def retriever() -> GraphRetriever:
     assert graph_counts(driver)["Section"] == len(RESULT.sections)
     run = neo4j_runner(driver)
     names = [r["name"] for r in run("MATCH (e:APIElement) RETURN e.name AS name", {})]
-    linker = EntityLinker(names, ["payment timeout", "dependency injection"])
+    linker = EntityLinker(names, ["timeout", "dependency injection"])
     return GraphRetriever(run, linker, RESULT.chunks, POLICY)
 
 
 def test_every_template_runs_and_filters_acl(retriever: GraphRetriever) -> None:
     run = retriever._run
     for name, cypher in TEMPLATES.items():
-        params = {"names": ["Depends", "payment timeout"], "groups": ["public"], "limit": 50}
+        params = {"names": ["Depends", "timeout"], "groups": ["public"], "limit": 50}
         rows = run(cypher, params)
         sids = {r["section_id"] for r in rows}
         assert not any(s.startswith("internal-kb:kb-0002") for s in sids), name
@@ -74,7 +74,7 @@ def test_every_template_runs_and_filters_acl(retriever: GraphRetriever) -> None:
 def test_kb_references_skip_superseded_docs(retriever: GraphRetriever) -> None:
     rows = retriever._run(
         TEMPLATES["kb_references"],
-        {"names": ["payment timeout"], "groups": ["public", "eng-internal"], "limit": 50},
+        {"names": ["timeout"], "groups": ["public", "eng-internal"], "limit": 50},
     )
     sids = {r["section_id"] for r in rows}
     assert any("kb-0003" in s for s in sids)
@@ -83,7 +83,7 @@ def test_kb_references_skip_superseded_docs(retriever: GraphRetriever) -> None:
 
 def test_graph_retriever_never_leaks(retriever: GraphRetriever) -> None:
     acl = {c.chunk_id: c.metadata["acl"] for c in RESULT.chunks}
-    res = probe_leaks(retriever, acl, POLICY, queries=["payment timeout", "Depends", "JWT"])
+    res = probe_leaks(retriever, acl, POLICY, queries=["timeout", "Depends", "JWT"])
     assert res.leaks == [] and res.restricted_seen["engineer"] > 0
     hits = retriever.search(Query(qid="q", text="Depends with dependency injection"), 5)
     assert hits and hits[0].debug["via"]
