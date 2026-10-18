@@ -9,7 +9,8 @@
 | M2 BM25 | `m2-bm25` | done |
 | M3 Dense | `m3-dense` | done |
 | M4 Hybrid + rerank | `m4-hybrid` | done (golden_v2: +1,512 judge labels, unreviewed) |
-| M5 Query understanding | `m5-query` | next (drafts in `src/docseek/query/`, `ingest/strategies.py`) |
+| M5 Query understanding | `m5-query` | done |
+| M6 Graph + FS | `m6-graph-fs` | next |
 
 ## Modules and CLI
 
@@ -28,6 +29,14 @@
   rerank (first_stage, model, top_n), qdrant_hybrid. `eval/runner.py::build_child` builds nested configs.
 - `core/onnx.py`: fastembed on GPU via onnxruntime-directml (Windows); `DOCSEEK_ONNX_PROVIDERS`.
 - `eval/pooling.py` + `docseek eval pool RUN... --depth 10 [--execute]` (dry run shows cost).
+- `query/`: `classifier.py` (rules → LLM), `filters.py` (FilterExtractor, search_with_fallback),
+  `rewrite.py` (MultiQuery/HyDE/Decompose, RRF), `freshness.py` (FreshnessReranker,
+  `score_transform: sigmoid` after a cross-encoder), `router.py`. Runner types via
+  `eval/pipelines.py`: freshness, expand, filtered, router (LLM = `llm.query_role`).
+- `ingest/strategies.py` + `scripts/m5_chunk_variants.py` → `data/processed/chunks_{fixed_256,section_ctx}.jsonl`;
+  select with `chunks_file:` in an experiment YAML. `qtypes:` scores a subset.
+- Local LLM: Ollama (`%LOCALAPPDATA%/Programs/Ollama/ollama.exe`, serves 127.0.0.1:11434),
+  model `qwen2.5:3b-instruct`. Experiments: `DOCSEEK_LLM_STRICT=1`.
 - `core/filtering.py`: `matches_filter(metadata, MetadataFilter)`.
 - `testing/acl_checks.py`: `probe_leaks()` — use for every new retriever/tool test.
 - `eval/grid.py` + `docseek eval grid --config X --param retriever.k1=0.9,1.2 ...` (dev only).
@@ -53,6 +62,10 @@
   (`experiments/20261018T142702Z_rerank_bge20_test`); v2 0.799. Fast default:
   `hybrid_weighted.yaml` test v1 0.709 (`…134221Z_hybrid_weighted_test`).
 
+- M5 `configs/experiments/fresh_ctx.yaml`: test nDCG@10 0.709, StaleHit@5 0.00 (0.20 without
+  the superseded penalty), Leakage 0 (`experiments/20261018T164921Z_fresh_ctx_test`). Dev gains
+  did not transfer to test; no query-time LLM component helped with the 3B local model.
+
 ## Default decisions taken (no ADR needed)
 
 - M2: Lucene idf `ln(1 + (N-df+.5)/(df+.5))`; query terms de-duplicated in BM25; BM25F =
@@ -75,6 +88,13 @@
 - M4: switched fastembed to GPU (DirectML) at the user's request; reranker batch 8.
 - Budget: OpenAI ledger $0.933 of $2.00 after M4 → ~$1.07 left for M5–M8 (DeepEval in M8 is
   the main remaining OpenAI consumer; generator/agent/vision use Gemini free tier).
+
+- M5: chunking = section_ctx, α 0.3 (ADR 0004; did not transfer to test, kept as it is not worse).
+- M5: freshness stage = superseded penalty 0.5 only (β 0, deprecated 0) from the dev grid.
+- M5: query role on local Ollama qwen2.5:3b (ADR 0005); Gemini free tier = 500 req/day/model;
+  3.1-flash-lite quota for 2026-10-18 exhausted (generator/agent/vision role).
+- M5: OpenAI cap lowered to $1.88 (owner has ~$1 left).
+- Docker's Qdrant container stopped once when drive C: filled up; `docker compose up -d qdrant`.
 
 ## Open items
 

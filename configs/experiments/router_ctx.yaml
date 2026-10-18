@@ -1,0 +1,65 @@
+# M5: classifier (rules + local LLM) routes howto/freshness to HyDE (the only qtypes where
+# HyDE was >= fresh_ctx on dev); everything else to fresh_ctx.
+name: router_ctx
+chunks_file: chunks_section_ctx.jsonl
+retriever:
+  type: router
+  use_llm: true
+  default:
+    type: freshness
+    beta: 0.0
+    tau_days: 180
+    deprecated_penalty: 0.0
+    superseded_penalty: 0.5
+    depth: 50
+    inner:
+      type: hybrid
+      method: weighted
+      norm: minmax
+      alpha: 0.3
+      depth: 50
+      children:
+        bm25:
+          type: bm25
+          k1: 1.5
+          b: 0.5
+          fields:
+            title: 2.0
+            section_path: 0.5
+            body: 1.0
+            code: 0.5
+        dense:
+          type: dense
+          model: BAAI/bge-small-en-v1.5
+  routes:
+    howto: &id001
+      type: expand
+      mode: hyde
+      depth: 50
+      inner:
+        type: freshness
+        beta: 0.0
+        tau_days: 180
+        deprecated_penalty: 0.0
+        superseded_penalty: 0.5
+        depth: 50
+        inner:
+          type: hybrid
+          method: weighted
+          norm: minmax
+          alpha: 0.3
+          depth: 50
+          children:
+            bm25:
+              type: bm25
+              k1: 1.5
+              b: 0.5
+              fields:
+                title: 2.0
+                section_path: 0.5
+                body: 1.0
+                code: 0.5
+            dense:
+              type: dense
+              model: BAAI/bge-small-en-v1.5
+    freshness: *id001
