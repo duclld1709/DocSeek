@@ -240,6 +240,18 @@ def _qdrant_hybrid(
     return retriever
 
 
+def _graph(
+    cfg: RetrieverConfig,
+    chunks: list[Chunk],
+    _g: list[GoldenQuery],
+    policy: AccessPolicy,
+    _seed: int,
+) -> Retriever:
+    from docseek.graph.graph_retriever import build_graph_retriever
+
+    return build_graph_retriever(cfg.model_dump(exclude={"type"}), chunks, policy)
+
+
 def _pipeline(kind: str) -> RetrieverFactory:
     def factory(
         cfg: RetrieverConfig,
@@ -265,6 +277,7 @@ RETRIEVERS: dict[str, RetrieverFactory] = {
     "hybrid": _hybrid,
     "rerank": _rerank,
     "qdrant_hybrid": _qdrant_hybrid,
+    "graph": _graph,
     **{kind: _pipeline(kind) for kind in ("freshness", "expand", "filtered", "router")},
 }
 

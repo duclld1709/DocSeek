@@ -26,6 +26,8 @@ app = typer.Typer(
 data_app = typer.Typer(help="Fetch and generate corpora.", no_args_is_help=True)
 app.add_typer(data_app, name="data")
 eval_app = typer.Typer(help="Golden set, judges and experiments.", no_args_is_help=True)
+graph_app = typer.Typer(help="Knowledge graph (Neo4j).", no_args_is_help=True)
+app.add_typer(graph_app, name="graph")
 app.add_typer(eval_app, name="eval")
 human_cli.register(eval_app)
 
@@ -196,6 +198,55 @@ def search_cmd(
     for h in hits:
         table.add_row(str(h.rank), f"{h.score:.3f}", h.section_id)
     console.print(table)
+
+
+@graph_app.command("build")
+def graph_build(
+    concept_pages: Annotated[
+        int, typer.Option(help="Pages to send to the query LLM for Concept extraction (0 = none).")
+    ] = 0,
+) -> None:
+    """Extract the graph from sections, docs_src and release notes and load it into Neo4j."""
+    import json
+
+    from docseek.core.models import Section
+    from docseek.core.runs import environment_info, make_run_dir, write_json
+    from docseek.core.tracing import JsonlTraceSink, Tracer, read_traces, summarize_llm_costs
+    from docseek.graph.concepts import make_concept_fn
+    from docseek.graph.extract import build_graph, load_code_files
+    from docseek.graph.graph_retriever import connect_neo4j
+    from docseek.graph.loader import graph_counts, load_graph
+    from docseek.ingest.pipeline import read_jsonl
+    from docseek.llm.client import build_llm_client
+
+    settings = Settings()
+    corpus = load_corpus_config(settings.configs_dir)
+    raw = corpus.fastapi.dest
+    sections = read_jsonl(Path("data/processed/sections.jsonl"), Section)
+    run_dir = make_run_dir(settings.experiments_dir, "graph_build")
+    concept_fn = None
+    if concept_pages > 0:
+        llm = build_llm_client(settings, Tracer(JsonlTraceSink(run_dir / "traces.jsonl")))
+        concept_fn = make_concept_fn(llm, load_models_config(settings.configs_dir).llm.query_role)
+    notes = raw / "docs" / "en" / "docs" / "release-notes.md"
+    g = build_graph(
+        sections,
+        load_code_files(raw / "docs_src", raw),
+        release_notes=notes.read_text(encoding="utf-8") if notes.is_file() else None,
+        concept_fn=concept_fn,
+        max_concept_pages=concept_pages,
+    )
+    with connect_neo4j() as driver:
+        load_graph(driver, g, wipe=True)
+        counts = graph_counts(driver)
+    traces = run_dir / "traces.jsonl"
+    cost = summarize_llm_costs(read_traces(traces)).__dict__ if traces.exists() else None
+    write_json(run_dir / "report.json", {"extracted": g.counts(), "loaded": counts, "cost": cost})
+    write_json(
+        run_dir / "env.json", environment_info(command="graph build", concept_pages=concept_pages)
+    )
+    console.print(json.dumps(counts, indent=1))
+    console.print(f"-> {run_dir}")
 
 
 @data_app.command("fetch")
