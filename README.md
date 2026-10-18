@@ -6,7 +6,7 @@ tools for an agent, all evaluated against a golden set with statistical tests.
 
 [![CI](https://github.com/duclld1709/DocSeek/actions/workflows/ci.yml/badge.svg)](https://github.com/duclld1709/DocSeek/actions/workflows/ci.yml)
 
-> **Status:** M0 (foundation). The retrieval pipeline and the benchmark are built milestone
+> **Status:** M1 (ingestion + evaluation harness) in progress. The retrieval pipeline and the benchmark are built milestone
 > by milestone; see [Roadmap](#roadmap).
 
 ## Results at a glance
@@ -55,6 +55,19 @@ Fetch the pinned FastAPI docs corpus (writes `data/raw/MANIFEST.json`):
 ```bash
 uv run docseek data fetch
 ```
+
+Build sections and chunks (Corpus B, the internal KB, is committed in `data/internal_kb/`),
+then check the evaluation harness with the sanity retrievers:
+
+```bash
+uv run docseek ingest
+uv run docseek eval run --config configs/experiments/oracle.yaml --split dev
+uv run docseek eval run --config configs/experiments/random.yaml --split dev
+```
+
+LLM-backed steps (`data gen-internal`, `eval synth`, `eval calibrate`) go through a response
+cache, a per-run budget and a project-wide spend ledger (ADR 0003); `uv run docseek eval
+costs` shows what has been spent.
 
 Development:
 
