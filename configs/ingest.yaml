@@ -1,0 +1,7 @@
+# Ingestion settings (`docseek ingest`). Tokens are counted with the tokenizer of the default
+# embedding model in configs/models.yaml, because 512 is that model's input limit.
+output_dir: data/processed
+chunking:
+  strategy: section
+  max_tokens: 512
+  overlap_tokens: 64

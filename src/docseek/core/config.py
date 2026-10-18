@@ -162,6 +162,17 @@ class ModelsConfig(_YamlModel):
     reranker: ModelChoice
 
 
+class ChunkingSettings(_YamlModel):
+    strategy: str = "section"
+    max_tokens: int = Field(default=512, gt=0)
+    overlap_tokens: int = Field(default=64, ge=0)
+
+
+class IngestConfig(_YamlModel):
+    output_dir: Path
+    chunking: ChunkingSettings
+
+
 def load_yaml[M: BaseModel](path: Path, model: type[M]) -> M:
     """Load a YAML file and validate it into ``model``."""
     with path.open(encoding="utf-8") as fh:
@@ -179,3 +190,7 @@ def load_principals(configs_dir: Path = Path("configs")) -> PrincipalsConfig:
 
 def load_models_config(configs_dir: Path = Path("configs")) -> ModelsConfig:
     return load_yaml(configs_dir / "models.yaml", ModelsConfig)
+
+
+def load_ingest_config(configs_dir: Path = Path("configs")) -> IngestConfig:
+    return load_yaml(configs_dir / "ingest.yaml", IngestConfig)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Annotated
 
 import typer
@@ -65,6 +66,78 @@ def doctor_cmd(
     console.print(table)
     if not doctor.is_healthy(results, strict=strict):
         console.print("[red]Some required checks failed.[/red] Is `docker compose up -d` running?")
+        raise typer.Exit(code=1)
+
+
+@app.command("ingest")
+def ingest_cmd(
+    force: Annotated[bool, typer.Option(help="Rebuild even if inputs are unchanged.")] = False,
+    offline_tokens: Annotated[
+        bool, typer.Option(help="Count tokens with the regex counter (no model download).")
+    ] = False,
+) -> None:
+    """Parse corpora into data/processed/{sections,chunks}.jsonl and stats.json."""
+    import json
+    from datetime import UTC, datetime
+
+    from docseek.core.config import load_ingest_config
+    from docseek.ingest import pipeline
+    from docseek.ingest.chunking import ChunkingConfig
+    from docseek.ingest.tokens import HFTokenCounter, RegexTokenCounter, TokenCounter
+
+    settings = Settings()
+    corpus = load_corpus_config(settings.configs_dir)
+    ingest_cfg = load_ingest_config(settings.configs_dir)
+    if ingest_cfg.chunking.strategy != "section":
+        console.print(f"[red]unsupported chunking strategy:[/red] {ingest_cfg.chunking.strategy}")
+        raise typer.Exit(code=1)
+    chunking = ChunkingConfig(ingest_cfg.chunking.max_tokens, ingest_cfg.chunking.overlap_tokens)
+    counter: TokenCounter = (
+        RegexTokenCounter()
+        if offline_tokens
+        else HFTokenCounter(load_models_config(settings.configs_dir).embedding.default)
+    )
+    manifest = corpus.manifest_path
+    commit = (
+        json.loads(manifest.read_text(encoding="utf-8"))["commit"] if manifest.is_file() else None
+    )
+    out_dir = ingest_cfg.output_dir
+    digest = pipeline.input_hash(corpus, chunking, counter, commit=commit)
+    if not force and pipeline.is_up_to_date(out_dir, digest):
+        console.print(f"{out_dir}: up to date (input hash {digest[:12]}), nothing to do")
+        return
+    try:
+        result = pipeline.run_pipeline(
+            corpus, load_principals(settings.configs_dir), counter, chunking, repo_root=Path.cwd()
+        )
+    except FileNotFoundError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=1) from exc
+    n_sec = pipeline.write_jsonl(out_dir / "sections.jsonl", result.sections)
+    n_chunk = pipeline.write_jsonl(out_dir / "chunks.jsonl", result.chunks)
+    stats = pipeline.corpus_stats(result, counter)
+    stats.update(
+        input_hash=digest,
+        corpus_commit=commit,
+        chunking=chunking.__dict__,
+        created_at=datetime.now(UTC).isoformat(),
+    )
+    (out_dir / "stats.json").write_text(
+        json.dumps(stats, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n"
+    )
+    table = Table(title="docseek ingest")
+    table.add_column("source")
+    for col in ("documents", "sections", "chunks"):
+        table.add_column(col, justify="right")
+    for src, row in stats["by_source"].items():
+        table.add_row(src, *(str(row[c]) for c in ("documents", "sections", "chunks")))
+    console.print(table)
+    console.print(
+        f"{n_sec} sections, {n_chunk} chunks -> {out_dir}; issues {stats['issues']}; "
+        f"links {stats['links']}"
+    )
+    if stats["unresolved_include_syntax"]:
+        console.print("[red]unresolved {* ... *} include syntax left in output[/red]")
         raise typer.Exit(code=1)
 
 
