@@ -55,3 +55,14 @@ jobs:
         with:
           name: coverage
           path: coverage.xml
+
+  eval-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.0 # upstream publishes no floating major tag
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - name: Fake eval gate (fixture corpora; fails on regression or Leakage > 0)
+        run: uv run pytest tests/unit/eval/test_eval_gate.py -v

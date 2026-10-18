@@ -1,0 +1,8 @@
+# M2 ablation of bm25f: stemming off.
+name: bm25f_no_stem
+retriever:
+  type: bm25
+  k1: 1.5
+  b: 0.5
+  fields: { title: 2.0, section_path: 0.5, body: 1.0, code: 0.5 }
+  tokenizer: { stem: false }

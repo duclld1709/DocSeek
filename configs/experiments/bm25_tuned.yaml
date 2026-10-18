@@ -1,0 +1,3 @@
+# M2: single-field BM25 with k1/b from the dev grid (also the "no field weights" ablation).
+name: bm25_tuned
+retriever: { type: bm25, k1: 1.5, b: 0.5 }

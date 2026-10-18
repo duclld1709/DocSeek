@@ -1,0 +1,7 @@
+# M2: BM25F (per-field length norm) with k1/b from the dev grid; weights tuned on dev.
+name: bm25f
+retriever:
+  type: bm25
+  k1: 1.5
+  b: 0.5
+  fields: { title: 2.0, section_path: 0.5, body: 1.0, code: 0.5 }

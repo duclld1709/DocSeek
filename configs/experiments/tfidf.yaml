@@ -1,0 +1,3 @@
+# M2 baseline: TF-IDF cosine over section path + text, default tokenizer.
+name: tfidf
+retriever: { type: tfidf }

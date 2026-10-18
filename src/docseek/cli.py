@@ -157,6 +157,47 @@ def ingest_cmd(
         raise typer.Exit(code=1)
 
 
+@app.command("index")
+def index_cmd(
+    config: Annotated[Path, typer.Option(help="Experiment YAML whose retriever to build.")],
+) -> None:
+    """Build (or reuse from cache) the index behind an experiment config's retriever."""
+    import time
+
+    from docseek.eval.runner import build_retriever, load_experiment
+
+    cfg = load_experiment(config)
+    inputs = _eval_inputs(cfg.golden, cfg.processed_dir)
+    start = time.perf_counter()
+    retriever = build_retriever(cfg, inputs["chunks"], [], inputs["policy"])  # type: ignore[arg-type]
+    console.print(f"{retriever.name}: ready in {time.perf_counter() - start:.2f}s")
+
+
+@app.command("search")
+def search_cmd(
+    text: Annotated[str, typer.Argument(help="Query text.")],
+    config: Annotated[Path, typer.Option(help="Experiment YAML.")] = Path(
+        "configs/experiments/bm25f.yaml"
+    ),
+    principal: Annotated[str, typer.Option(help="Who is asking (ACL).")] = "anonymous",
+    k: Annotated[int, typer.Option(help="Number of hits.")] = 10,
+) -> None:
+    """Run one query against a configured retriever and print the hits."""
+    from docseek.core.models import Query
+    from docseek.eval.runner import build_retriever, load_experiment
+
+    cfg = load_experiment(config)
+    inputs = _eval_inputs(cfg.golden, cfg.processed_dir)
+    retriever = build_retriever(cfg, inputs["chunks"], [], inputs["policy"])  # type: ignore[arg-type]
+    hits = retriever.search(Query(qid="cli", text=text, principal=principal), k)
+    table = Table(title=f"{retriever.name}, principal={principal}")
+    for col in ("rank", "score", "section"):
+        table.add_column(col)
+    for h in hits:
+        table.add_row(str(h.rank), f"{h.score:.3f}", h.section_id)
+    console.print(table)
+
+
 @data_app.command("fetch")
 def data_fetch(
     force: Annotated[bool, typer.Option(help="Re-clone even if already pinned.")] = False,
@@ -248,6 +289,35 @@ def data_gen_internal(
     console.print(f"{len(docs)} KB docs valid in {out_dir}")
 
 
+def _eval_inputs(golden_path: Path, processed_dir: Path) -> dict[str, object]:
+    """Golden set, sections, chunks and access policy for ``eval run`` / ``eval grid``."""
+    from docseek.core.acl import AccessPolicy
+    from docseek.core.models import Chunk, Section
+    from docseek.eval.golden import load_golden
+    from docseek.ingest.pipeline import read_jsonl
+
+    for path in (golden_path, processed_dir / "sections.jsonl"):
+        if not path.is_file():
+            console.print(
+                f"[red]missing {path}[/red] (run `docseek ingest` / build the golden set)"
+            )
+            raise typer.Exit(code=1)
+    return {
+        "golden": load_golden(golden_path),
+        "sections": read_jsonl(processed_dir / "sections.jsonl", Section),
+        "chunks": read_jsonl(processed_dir / "chunks.jsonl", Chunk),
+        "policy": AccessPolicy(load_principals(Settings().configs_dir)),
+        "golden_path": golden_path,
+    }
+
+
+def _check_split(split: str) -> Literal["dev", "test", "all"]:
+    if split not in ("dev", "test", "all"):
+        console.print(f"[red]--split must be dev, test or all, got {split!r}[/red]")
+        raise typer.Exit(code=1)
+    return cast(Literal["dev", "test", "all"], split)
+
+
 @eval_app.command("run")
 def eval_run(
     config: Annotated[Path, typer.Option(help="Experiment YAML, e.g. configs/experiments/x.yaml.")],
@@ -257,33 +327,16 @@ def eval_run(
     """Evaluate one retrieval configuration and write experiments/<ts>_<name>_<split>/."""
     import json
 
-    from docseek.core.acl import AccessPolicy
-    from docseek.core.models import Chunk, Section
-    from docseek.eval.golden import load_golden
     from docseek.eval.runner import load_experiment, run_experiment
-    from docseek.ingest.pipeline import read_jsonl
 
-    if split not in ("dev", "test", "all"):
-        console.print(f"[red]--split must be dev, test or all, got {split!r}[/red]")
-        raise typer.Exit(code=1)
-    settings = Settings()
+    checked = _check_split(split)
     cfg = load_experiment(config)
-    golden_path = golden or cfg.golden
-    for path in (golden_path, cfg.processed_dir / "sections.jsonl"):
-        if not path.is_file():
-            console.print(
-                f"[red]missing {path}[/red] (run `docseek ingest` / build the golden set)"
-            )
-            raise typer.Exit(code=1)
+    inputs = _eval_inputs(golden or cfg.golden, cfg.processed_dir)
     run_dir = run_experiment(
         cfg,
-        golden=load_golden(golden_path),
-        sections=read_jsonl(cfg.processed_dir / "sections.jsonl", Section),
-        chunks=read_jsonl(cfg.processed_dir / "chunks.jsonl", Chunk),
-        policy=AccessPolicy(load_principals(settings.configs_dir)),
-        split=cast(Literal["dev", "test", "all"], split),
-        experiments_dir=settings.experiments_dir,
-        golden_path=golden_path,
+        split=checked,
+        experiments_dir=Settings().experiments_dir,
+        **inputs,  # type: ignore[arg-type]
     )
     metrics = json.loads((run_dir / "metrics.json").read_text(encoding="utf-8"))
     overall = metrics["overall"]
@@ -301,6 +354,46 @@ def eval_run(
             table.add_row(name, f"total {v['total']}", f"max {v['max']}", "")
     console.print(table)
     console.print(f"-> {run_dir}")
+
+
+@eval_app.command("grid")
+def eval_grid(
+    config: Annotated[Path, typer.Option(help="Base experiment YAML.")],
+    param: Annotated[
+        list[str], typer.Option(help="Swept key, e.g. retriever.k1=0.9,1.2 (repeatable).")
+    ],
+    split: Annotated[str, typer.Option(help="Tune on dev; never sweep on test.")] = "dev",
+    metric: Annotated[str, typer.Option(help="Metric to rank grid points by.")] = "ndcg@10",
+) -> None:
+    """Run a cartesian sweep; writes one run per point plus <ts>_<name>_grid_<split>/."""
+    import json
+
+    from docseek.eval.grid import parse_param, run_grid
+    from docseek.eval.runner import ExperimentConfig, load_experiment, run_experiment
+
+    checked = _check_split(split)
+    if checked == "test":
+        console.print("[red]grid search on the test split is not allowed[/red]")
+        raise typer.Exit(code=1)
+    base = load_experiment(config)
+    params = dict(parse_param(p) for p in param)
+    inputs = _eval_inputs(base.golden, base.processed_dir)
+    experiments_dir = Settings().experiments_dir
+
+    def run_one(cfg: ExperimentConfig) -> Path:
+        console.print(f"  {cfg.name}")
+        return run_experiment(cfg, split=checked, experiments_dir=experiments_dir, **inputs)  # type: ignore[arg-type]
+
+    out = run_grid(base, params, run_one, split=checked, experiments_dir=experiments_dir)
+    summary = json.loads((out / "summary.json").read_text(encoding="utf-8"))
+    points = sorted(summary["points"], key=lambda r: -r.get(metric, 0.0))
+    table = Table(title=f"grid {base.name} on {split}, by {metric}")
+    table.add_column("params")
+    table.add_column(metric)
+    for r in points:
+        table.add_row(json.dumps(r["params"]), f"{r.get(metric, float('nan')):.4f}")
+    console.print(table)
+    console.print(f"-> {out}")
 
 
 @eval_app.command("compare")

@@ -110,7 +110,7 @@ def test_split_filter(tmp_path: Path) -> None:
 
 
 def test_unknown_retriever_type() -> None:
-    cfg = ExperimentConfig(name="x", retriever=RetrieverConfig(type="bm25"))
+    cfg = ExperimentConfig(name="x", retriever=RetrieverConfig(type="no-such-retriever"))
     with pytest.raises(ValueError, match="unknown retriever type"):
         build_retriever(cfg, RESULT.chunks, GOLDEN, POLICY)
 

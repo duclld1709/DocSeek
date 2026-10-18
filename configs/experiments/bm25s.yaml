@@ -1,0 +1,3 @@
+# M2 reference: bm25s (Lucene variant) with our tokenizer and bm25_tuned's k1/b.
+name: bm25s
+retriever: { type: bm25s, k1: 1.5, b: 0.5 }
