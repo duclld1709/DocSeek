@@ -1,0 +1,10 @@
+# M4 comparison: hybrid inside Qdrant (sparse BM25 with idf modifier + dense bge-small,
+# prefetch 50 each, Query API RRF). Sparse side is single-field BM25 (k1 1.5, b 0.5).
+name: qdrant_hybrid_rrf
+retriever:
+  type: qdrant_hybrid
+  model: BAAI/bge-small-en-v1.5
+  k1: 1.5
+  b: 0.5
+  fusion: rrf
+  depth: 50

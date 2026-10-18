@@ -1,0 +1,20 @@
+# M4: cross-encoder bge-reranker-base over the best dev fusion (weighted min-max, alpha 0.5).
+# Scores are cached in data/index/rerank_scores.sqlite (latency: scripts/m4_rerank_latency.py).
+name: rerank_bge
+retriever:
+  type: rerank
+  model: BAAI/bge-reranker-base
+  top_n: 50
+  first_stage:
+    type: hybrid
+    method: weighted
+    norm: minmax
+    alpha: 0.5
+    depth: 100
+    children:
+      bm25:
+        type: bm25
+        k1: 1.5
+        b: 0.5
+        fields: { title: 2.0, section_path: 0.5, body: 1.0, code: 0.5 }
+      dense: { type: dense, model: BAAI/bge-small-en-v1.5 }
