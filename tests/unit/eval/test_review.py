@@ -250,3 +250,12 @@ def test_cli_build_label_and_calibrate(workspace: Path, monkeypatch: pytest.Monk
     (run,) = (workspace / "experiments").iterdir()
     report = json.loads((run / "report.json").read_text(encoding="utf-8"))
     assert report["n_pairs"] == 3 and report["judge_label_counts"] == {"1": 3}
+
+
+def test_assistant_annotations_are_recorded_and_qtype_can_be_fixed() -> None:
+    q = next(q for q in GOLDEN if q.qid == "q0006")
+    d = ReviewDecision(qid="q0006", action="edit", qtype=QueryType.HOWTO, annotator="claude-x")
+    (out,) = apply_decisions([q], {"q0006": d})
+    assert out.qtype == QueryType.HOWTO and out.annotator == "claude-x" and out.reviewed
+    (acc,) = apply_decisions([q], {"q0006": ReviewDecision(qid="q0006", action="accept")})
+    assert acc.annotator == "human"

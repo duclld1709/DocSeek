@@ -38,8 +38,11 @@ class GoldenQuery(BaseModel):
     split: Split = "dev"
     relevant: dict[str, int] = Field(default_factory=dict)
     reference_answer: str | None = None
-    origin: Literal["synthetic", "human"]
+    # synthetic: LLM pipeline; human: written by a person; claude: written by the coding
+    # assistant (Claude) on the owner's request. ``annotator`` says who reviewed or wrote it.
+    origin: Literal["synthetic", "human", "claude"]
     reviewed: bool = False
+    annotator: str | None = None
     style: Literal["human", "machine", "paraphrase"] | None = None
     source_section: str | None = None
     hard_negatives: list[str] = Field(default_factory=list)

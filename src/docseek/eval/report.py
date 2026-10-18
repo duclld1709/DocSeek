@@ -28,6 +28,9 @@ def golden_stats(queries: Sequence[GoldenQuery]) -> dict[str, Any]:
         "n_queries": len(queries),
         "reviewed": sum(q.reviewed for q in queries),
         "by_origin": dict(sorted(Counter(q.origin for q in queries).items())),
+        "reviewed_by": dict(
+            sorted(Counter(q.annotator or "unreviewed" for q in queries if q.reviewed).items())
+        ),
         "by_split": dict(sorted(Counter(q.split for q in queries).items())),
         "by_qtype": dict(sorted(Counter(str(q.qtype) for q in queries).items())),
         "by_principal": dict(sorted(Counter(q.principal for q in queries).items())),

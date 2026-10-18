@@ -38,8 +38,11 @@ class ReviewDecision(BaseModel):
     qid: str
     action: Literal["accept", "edit", "drop"]
     text: str | None = None  # new text for "edit"
+    qtype: QueryType | None = None  # corrected qtype for "edit"
     relevant: dict[str, int] | None = None  # replaced relevance for "edit"
     note: str | None = None
+    # Who decided: "human" for the project owner, a model id when delegated to an assistant.
+    annotator: str = "human"
 
 
 def read_jsonl_models[M: BaseModel](path: Path, model: type[M]) -> list[M]:
@@ -85,9 +88,11 @@ def apply_decisions(
         if d is None:
             out.append(q)
         elif d.action == "accept":
-            out.append(q.model_copy(update={"reviewed": True}))
+            out.append(q.model_copy(update={"reviewed": True, "annotator": d.annotator}))
         elif d.action == "edit":
-            update: dict[str, Any] = {"reviewed": True}
+            update: dict[str, Any] = {"reviewed": True, "annotator": d.annotator}
+            if d.qtype is not None:
+                update["qtype"] = d.qtype
             if d.text:
                 update["text"] = d.text
                 update["lexical_overlap"] = None  # stale after an edit; recomputed on build
@@ -113,6 +118,7 @@ class HumanQuery(BaseModel):
     reference_answer: str | None = None
     stale: list[str] = Field(default_factory=list)
     notes: str | None = None
+    annotator: str = "human"  # a model id when written by an assistant
 
 
 def load_human_queries(path: Path) -> list[HumanQuery]:
@@ -145,8 +151,9 @@ def build_golden(
             principal=h.principal,
             relevant=h.relevant,
             reference_answer=h.reference_answer,
-            origin="human",
+            origin="human" if h.annotator == "human" else "claude",
             reviewed=True,
+            annotator=h.annotator,
             stale=h.stale,
             notes=h.notes,
         )
@@ -193,6 +200,7 @@ class HumanLabel(BaseModel):
     pair_id: str
     score: int = Field(ge=0, le=2)
     note: str | None = None
+    annotator: str = "human"  # a model id when labelled by an assistant
 
 
 def sample_calibration_pairs(
@@ -270,6 +278,9 @@ def calibration_report(
     lengths = [len(sections[by_pair[i].section_id].text.split()) for i in ids]
     report: dict[str, Any] = {
         "n_pairs": len(ids),
+        # Who produced the reference labels ("human" or an assistant's model id). With an
+        # assistant, kappa measures judge-vs-assistant agreement, not judge-vs-human.
+        "reference_annotators": dict(sorted(Counter(human[i].annotator for i in ids).items())),
         "kappa_linear": cohen_kappa(h, j, weights="linear"),
         "kappa_quadratic": cohen_kappa(h, j, weights="quadratic"),
         "kappa_unweighted": cohen_kappa(h, j, weights="none"),
