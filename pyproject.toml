@@ -15,6 +15,7 @@ dependencies = [
     "qdrant-client>=1.19.1",
     "rich>=15.0.0",
     "structlog>=26.1.0",
+    "tokenizers>=0.23.3",
     "typer>=0.27.3",
 ]
 
@@ -51,9 +52,10 @@ pretty = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = ["--strict-markers", "-m", "not integration and not e2e"]
+addopts = ["--strict-markers", "-m", "not integration and not e2e and not network"]
 markers = [
     "integration: needs docker services (Qdrant, Neo4j)",
+    "network: downloads public model files (Hugging Face); no keys needed",
     "e2e: needs real API keys; never run in CI",
 ]
 
