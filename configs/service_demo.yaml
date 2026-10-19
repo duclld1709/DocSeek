@@ -1,0 +1,21 @@
+# Quick demo (clean clone, < 2 min): the mini fixture corpus from tests/fixtures, built by
+# `docseek demo build`, with a deterministic hash embedder (no model download) and no
+# reranker/graph/images. Same API and UI as the full service (configs/service.yaml).
+chunks_file: data/demo/chunks.jsonl
+projected_dir: data/demo/projected
+search_modes:
+  auto: &hybrid
+    type: hybrid
+    method: weighted
+    norm: minmax
+    alpha: 0.5
+    depth: 50
+    children:
+      bm25: &bm25 { type: bm25, k1: 1.5, b: 0.5, fields: { title: 2.0, section_path: 0.5, body: 1.0, code: 0.5 }, index_dir: null }
+      dense: &dense { type: dense, embedder: hash, dim: 256, cache_dir: null }
+  bm25: *bm25
+  dense: *dense
+  hybrid: *hybrid
+one_shot: *hybrid
+graph: false
+agent: { max_steps: 6, timeout_s: 90, budget_usd: 0.05, k: 5 }

@@ -92,3 +92,23 @@ jobs:
       - run: uv sync --locked
       - name: pytest (integration)
         run: uv run pytest -m integration tests/integration -v
+
+  docker-demo:
+    # Clean checkout -> docker compose up -> quick demo answers /health, /search and the UI.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: docker compose up (qdrant, api, ui)
+        run: docker compose up -d --build --wait --wait-timeout 600 qdrant api ui
+      - name: smoke test
+        run: |
+          curl -fsS http://127.0.0.1:8000/health
+          curl -fsS -X POST http://127.0.0.1:8000/search -H "Content-Type: application/json" \
+            -H "X-Principal: anonymous" -d '{"query": "BackgroundTasks", "k": 3}' | tee search.json
+          grep -q '"section_id"' search.json
+          curl -fsS --retry 30 --retry-all-errors --retry-delay 2 -o /dev/null http://127.0.0.1:8501/
+      - name: logs on failure
+        if: failure()
+        run: docker compose logs --tail 200 api ui
+      - if: always()
+        run: docker compose down -v

@@ -294,6 +294,25 @@ def bench(
     console.print(f"-> {run}")
 
 
+demo_app = typer.Typer(help="Quick demo on the mini fixture corpus.", no_args_is_help=True)
+app.add_typer(demo_app, name="demo")
+
+
+@demo_app.command("build")
+def demo_build(out: Annotated[Path, typer.Option()] = Path("data/demo")) -> None:
+    """Build the quick-demo corpus (sections, chunks, FS projection) from tests/fixtures."""
+    from docseek.ingest.pipeline import write_jsonl
+    from docseek.ingest.projection import project
+    from docseek.testing.fixtures import mini_ingest
+
+    result = mini_ingest()
+    out.mkdir(parents=True, exist_ok=True)
+    write_jsonl(out / "sections.jsonl", result.sections)
+    write_jsonl(out / "chunks.jsonl", result.chunks)
+    project(result.sections, out / "projected")
+    console.print(f"{len(result.sections)} sections, {len(result.chunks)} chunks -> {out}")
+
+
 @app.command("project")
 def project_cmd(
     out: Annotated[Path, typer.Option(help="Output directory.")] = Path("data/projected"),

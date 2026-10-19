@@ -46,6 +46,57 @@ services:
       retries: 12
     restart: unless-stopped
 
+  # API + UI. Default = quick demo on the mini fixture corpus (no model download, < 2 min).
+  # Full corpus: build the index on the host (see README), then
+  #   DOCSEEK_SERVICE_CONFIG=configs/service.yaml docker compose up -d
+  api:
+    build: .
+    command: >-
+      sh -c "docseek demo build --out data/demo &&
+      uvicorn docseek.api.app:app --host 0.0.0.0 --port 8000"
+    environment:
+      DOCSEEK_SERVICE_CONFIG: ${DOCSEEK_SERVICE_CONFIG:-configs/service_demo.yaml}
+      QDRANT_URL: http://qdrant:6333
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:-change-me}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      DOCSEEK_LLM_CACHE: /app/.cache/llm.sqlite  # shared with the host: one cache + spend ledger
+    volumes:
+      - ./data:/app/data
+      - ./.cache:/app/.cache
+      - ./experiments:/app/experiments:ro
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)"]
+      interval: 10s
+      timeout: 10s
+      start_period: 60s
+      retries: 18
+    restart: unless-stopped
+
+  ui:
+    build: .
+    command: >-
+      streamlit run src/docseek/ui/app.py --server.address 0.0.0.0 --server.port 8501
+      --server.headless true --browser.gatherUsageStats false
+    environment:
+      DOCSEEK_API_URL: http://api:8000
+      DOCSEEK_EXPERIMENTS_DIR: /app/experiments
+    volumes:
+      - ./data:/app/data:ro
+      - ./experiments:/app/experiments:ro
+    ports:
+      - "127.0.0.1:8501:8501"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   qdrant_storage:
   neo4j_data:

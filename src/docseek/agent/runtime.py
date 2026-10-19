@@ -52,6 +52,14 @@ def load_service_config(path: Path = Path("configs/service.yaml")) -> ServiceCon
     )
 
 
+def service_config_path(configs_dir: Path = Path("configs")) -> Path:
+    """``$DOCSEEK_SERVICE_CONFIG`` (e.g. configs/service_demo.yaml) or configs/service.yaml."""
+    import os
+
+    env = os.environ.get("DOCSEEK_SERVICE_CONFIG")
+    return Path(env) if env else configs_dir / "service.yaml"
+
+
 def retriever_block(entry: Any) -> dict[str, Any]:
     """An inline retriever block, or the ``retriever:`` block of an experiment YAML path."""
     if isinstance(entry, Mapping):
@@ -107,7 +115,7 @@ def build_runtime(
     from docseek.eval.runner import build_child
     from docseek.ingest.pipeline import read_jsonl
 
-    cfg = config or load_service_config(configs_dir / "service.yaml")
+    cfg = config or load_service_config(service_config_path(configs_dir))
     policy = AccessPolicy(load_principals(configs_dir))
     chunks = chunks if chunks is not None else read_jsonl(cfg.chunks_file, Chunk)
     disabled: dict[str, str] = {}
