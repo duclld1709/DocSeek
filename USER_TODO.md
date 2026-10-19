@@ -20,6 +20,16 @@ Claude kept working with a stand-in for each item; nothing here blocks the miles
   images; scan queries from the scan ground truth. The image/scan routing rules were written
   by the same author, so their 8/10 hit rate is optimistic.
 
+## M8 / release
+
+- [ ] Create the GitHub release for tag `v1.0.0` (Releases → Draft new release → choose the
+  tag, paste `CHANGELOG.md` → v1.0.0). Claude pushed the tag but has no GitHub token.
+- [ ] Optional: spot-check ~10 DeepEval verdicts in
+  `experiments/20261019T024413Z_m8_answers/judged.jsonl` against the answers (judge is a small
+  model; results are reported as relative comparisons).
+- [ ] Optional: run the quick demo locally once drive C: has ~5 GB free
+  (`docker compose up -d --build --wait qdrant api ui`); CI already verifies it.
+
 ## Machine (found in M5)
 
 - [ ] Drive C: is full (202 GB used, ~0.2 GB free on 2026-10-18). Ollama put its program

@@ -12,7 +12,7 @@
 | M5 Query understanding | `m5-query` | done |
 | M6 Graph + FS | `m6-graph-fs` | done |
 | M7 OCR + multimodal | `m7-multimodal` | done |
-| M8 Agent + API + bench | `v1.0.0` | next |
+| M8 Agent + API + bench | `v1.0.0` | done |
 
 ## Modules and CLI
 
@@ -92,6 +92,11 @@
   fresh_ctx on text+image+scan chunks 0.716, router 0.713; Leakage 0
   (`experiments/20261019T010714Z_m7_overall_fresh_test`).
 
+- M8 (`docs/benchmark_report.md`): golden_m7 test, 147 answerable: BM25F 0.693, fresh_ctx
+  0.716, rerank 0.758 (p = 0.007 vs BM25F), router 0.713. Answers (60 q): faithfulness
+  0.95-0.96, evidence R@10 agentic 0.915 vs one-shot 0.872, 13/13 correct abstentions.
+  Runs `20261019T034445Z_bench`, `20261019T041107Z_bench`, `20261019T024413Z_m8_answers`.
+
 ## Default decisions taken (no ADR needed)
 
 - M2: Lucene idf `ln(1 + (N-df+.5)/(df+.5))`; query terms de-duplicated in BM25; BM25F =
@@ -133,6 +138,17 @@
   image/scan routes measured, not adopted.
 - Docker Desktop may be stopped after the laptop sleeps/reboots: start it, then
   `docker compose up -d qdrant` (and neo4j).
+
+- M8: agent role = Gemma 4 26B-A4B (Gemini API free tier; 16k input tokens/min -> rpm 4);
+  all three answer modes on it (ADR 0007). DeepEval via `eval/answer_judge.py` (judge role).
+- M8: `docker compose up` = quick demo (`configs/service_demo.yaml`, mini corpus, hash
+  embedder); `DOCSEEK_SERVICE_CONFIG=configs/service.yaml` for the full corpus. Verified in
+  CI (`docker-demo`), not locally (drive C: nearly full).
+- M8 modules: `agent/` (tools, loop, answer, runtime), `api/app.py`, `ui/app.py`,
+  `eval/bench.py` + `bench_rss.py`, `eval/answer_judge.py`; scripts `m8_answer_eval.py`,
+  `m8_judge.py`, `m8_answer_latency.py`, `m8_answer_summary.py`, `m8_cost.py`.
+- Restart after reboot: Docker Desktop, `docker compose up -d qdrant neo4j`. Do not run the
+  API/UI servers during long evals (RAM: they load the same models).
 
 ## Open items
 

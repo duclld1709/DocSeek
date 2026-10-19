@@ -78,6 +78,21 @@ def uncached_queries(block: Opts) -> Opts:
     return block
 
 
+def rss_fresh_process(config: Path, chunks_file: str, golden: Path) -> dict[str, Any]:
+    """RSS of one config built in a new interpreter (``docseek.eval.bench_rss``)."""
+    import sys
+
+    out = subprocess.run(
+        [sys.executable, "-m", "docseek.eval.bench_rss", str(config), chunks_file, str(golden)],
+        capture_output=True,
+        text=True,
+        timeout=1800,
+        check=True,
+    ).stdout
+    result: dict[str, Any] = json.loads(out.strip().splitlines()[-1])
+    return result
+
+
 def rss_mb() -> float:
     import psutil
 
@@ -243,7 +258,7 @@ def vector_sweep(
         client.create_collection(
             coll,
             vectors_config=models.VectorParams(size=dim, distance=models.Distance.COSINE),
-            hnsw_config=models.HnswConfigDiff(m=16, ef_construct=100, full_scan_threshold=1),
+            hnsw_config=models.HnswConfigDiff(m=16, ef_construct=100, full_scan_threshold=10),
             optimizers_config=models.OptimizersConfigDiff(indexing_threshold=1),
             quantization_config=quant,
         )

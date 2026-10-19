@@ -220,6 +220,9 @@ def bench(
     split: Annotated[str, typer.Option()] = "test",
     reps: Annotated[int, typer.Option(min=1)] = 3,
     sweep: Annotated[bool, typer.Option(help="int8 quantization x HNSW ef sweep.")] = True,
+    only_sweep: Annotated[
+        bool, typer.Option(help="Skip quality/latency; RSS per config + vector sweep only.")
+    ] = False,
 ) -> None:
     """Benchmark configs on one corpus + golden set: quality, latency, RAM, disk, build time."""
     import json
@@ -242,7 +245,15 @@ def bench(
         "configs": [],
     }
     names = configs or BENCH_CONFIGS
-    for i, name in enumerate(names, start=1):
+    rss: dict[str, object] = {}
+    for name in names:  # one fresh interpreter per config: comparable process RSS
+        console.print(f"rss {name}", highlight=False)
+        rss[name] = b.rss_fresh_process(
+            Path("configs/experiments") / f"{name}.yaml", chunks_file, golden
+        )
+    report["rss_fresh_process_mb"] = rss
+    write_json(run / "report.json", report)
+    for i, name in enumerate([] if only_sweep else names, start=1):
         console.print(f"[{i}/{len(names)}] {name}", highlight=False)
         cfg = load_experiment(Path("configs/experiments") / f"{name}.yaml").model_copy(
             update={"golden": golden, "chunks_file": chunks_file, "qtypes": None}

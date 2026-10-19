@@ -136,7 +136,8 @@ def tab_trace(principal: str) -> None:
         }
         for e in tr["events"]
     ]
-    st.bar_chart({r["step"]: r["latency_ms"] for r in rows}, x_label="step", y_label="ms")
+    steps = {f"{r['step']} {r['name']}": r["latency_ms"] for r in rows if r["kind"] != "answer"}
+    st.bar_chart(steps, x_label="step", y_label="ms")  # the final "answer" event is the total
     st.dataframe(rows, hide_index=True, use_container_width=True)
 
 
