@@ -1,7 +1,6 @@
-# Architecture (draft)
+# Architecture
 
-> Draft written in M0. Sections are filled in as milestones land; the "Status" column says
-> what exists today.
+> Written in M0 and filled in milestone by milestone; final as of M8 (`v1.0.0`).
 
 ## System overview
 
@@ -45,8 +44,10 @@ flowchart TB
 | `hybrid/`, `rerank/` | Fusion, normalisation, cross-encoder | M4 |
 | `query/` | Classifier, rewrite, decomposition, filters, router | M5 |
 | `graph/`, `fs/` | Neo4j graph retrieval, sandboxed filesystem tools | M6 |
-| `multimodal/` | OCR, CLIP, captions | M7 |
-| `agent/`, `api/`, `ui/` | Agent loop, HTTP API, demo UI | M8 |
+| `ingest/` (M7 part) | `pdf_parser.py`, `ocr.py` (Tesseract, RapidOCR, vision LLM), `images.py`, `scans.py`; `dense/image_retriever.py` (CLIP, named vector `image`) | M7 |
+| `agent/` | `tools.py` (principal-bound ToolBox), `loop.py` (AgentLoop, OneShotRAG), `answer.py` (citation post-check, abstain), `runtime.py` (wiring from `configs/service.yaml`) | M8 |
+| `api/`, `ui/` | FastAPI `/search` `/ask` `/sections/{id}` `/health` `/traces/{id}`; Streamlit Compare/Answer/Trace/Eval | M8 |
+| `eval/bench.py`, `eval/answer_judge.py` | `docseek bench`; DeepEval adapter over our LLM client | M8 |
 
 ## Data units and identifiers
 
@@ -129,6 +130,34 @@ Neo4j schema (`src/docseek/graph/schema.py`):
 - `docseek project` writes `data/projected/<source>/<path>.md` (headings + `<!-- section_id -->`)
   and `_manifest.json`; `fs/tools.py` serves `ls/find/grep/cat` confined to that root, hides
   files the principal cannot read and renders `_index.md` per principal.
+
+## Agent and serving (M8)
+
+```mermaid
+sequenceDiagram
+    participant U as Client (UI / curl)
+    participant API as FastAPI
+    participant TB as ToolBox (principal fixed)
+    participant L as AgentLoop
+    participant LLM as CachedLLMClient (cache, budget, ledger, trace)
+    U->>API: POST /ask {query, mode} + X-Principal
+    API->>TB: build for principal (unknown principal -> 403)
+    API->>L: run(query)
+    loop at most max_steps (6), timeout, budget
+        L->>LLM: messages + tool specs
+        LLM-->>L: tool calls or answer
+        L->>TB: search / get_section / graph_search / image_search / ls / find / grep / cat
+        TB-->>L: <tool_output> (ACL-filtered), evidence += sections shown
+    end
+    L->>L: citation post-check against evidence, abstain if none valid
+    L-->>API: answer, citations, removed citations, steps, trace id
+    API-->>U: AskResponse (trace readable only by the same principal)
+```
+
+- One-shot mode retrieves top-5 sections with `rerank_fresh_ctx` and makes one LLM call; the
+  agent falls back to it on a degradable LLM error.
+- `docker compose up` runs qdrant, neo4j, api and ui; the default service config is the quick
+  demo on the mini corpus (`configs/service_demo.yaml`), the full one is `configs/service.yaml`.
 
 ## Cross-cutting rules
 
