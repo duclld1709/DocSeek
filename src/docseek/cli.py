@@ -200,6 +200,100 @@ def search_cmd(
     console.print(table)
 
 
+BENCH_CONFIGS = [
+    "bm25f",
+    "dense_bge_small",
+    "hybrid_ctx",
+    "fresh_ctx",
+    "rerank_fresh_ctx",
+    "m7_overall_router",
+]
+
+
+@app.command("bench")
+def bench(
+    configs: Annotated[
+        list[str] | None, typer.Option(help="Experiment names (repeatable).")
+    ] = None,
+    golden: Annotated[Path, typer.Option()] = Path("data/golden/golden_m7.jsonl"),
+    chunks_file: Annotated[str, typer.Option()] = "chunks_section_ctx_images_scans.jsonl",
+    split: Annotated[str, typer.Option()] = "test",
+    reps: Annotated[int, typer.Option(min=1)] = 3,
+    sweep: Annotated[bool, typer.Option(help="int8 quantization x HNSW ef sweep.")] = True,
+) -> None:
+    """Benchmark configs on one corpus + golden set: quality, latency, RAM, disk, build time."""
+    import json
+
+    from docseek.core.runs import environment_info, make_run_dir, write_json
+    from docseek.dense.retriever import make_embedder
+    from docseek.eval import bench as b
+    from docseek.eval.golden import select
+    from docseek.eval.runner import load_experiment
+
+    checked = _check_split(split)
+    inputs = _eval_inputs(golden, Path("data/processed"), chunks_file)
+    settings = Settings()
+    run = make_run_dir(settings.experiments_dir, "bench")
+    report: dict[str, object] = {
+        "machine": b.machine_info(),
+        "golden": str(golden),
+        "chunks_file": chunks_file,
+        "split": checked,
+        "configs": [],
+    }
+    names = configs or BENCH_CONFIGS
+    for i, name in enumerate(names, start=1):
+        console.print(f"[{i}/{len(names)}] {name}", highlight=False)
+        cfg = load_experiment(Path("configs/experiments") / f"{name}.yaml").model_copy(
+            update={"golden": golden, "chunks_file": chunks_file, "qtypes": None}
+        )
+        row = b.bench_config(
+            cfg,
+            golden=inputs["golden"],  # type: ignore[arg-type]
+            sections=inputs["sections"],  # type: ignore[arg-type]
+            chunks=inputs["chunks"],  # type: ignore[arg-type]
+            policy=inputs["policy"],  # type: ignore[arg-type]
+            split=checked,
+            reps=reps,
+            experiments_dir=settings.experiments_dir,
+        )
+        console.print(
+            f"    nDCG@10 {row['quality']['ndcg@10']['mean']:.3f}  "
+            f"p95 {row['latency_ms']['p95']:.1f} ms  build {row['cold_build_s']:.1f} s",
+            highlight=False,
+        )
+        report["configs"].append(row)  # type: ignore[attr-defined]
+        write_json(run / "report.json", report)
+    if sweep:
+        console.print("vector sweep (float32 vs int8 x hnsw_ef)", highlight=False)
+        queries = [q for q in select(inputs["golden"], split=checked) if q.relevant]  # type: ignore[arg-type]
+        dense_chunks = inputs["chunks"]
+        report["vector_sweep"] = b.vector_sweep(
+            dense_chunks,  # type: ignore[arg-type]
+            queries,
+            make_embedder("BAAI/bge-small-en-v1.5", Path("data/index/emb")),
+            qdrant_url=settings.qdrant_url,
+            reps=reps,
+        )
+    report["docker_stats"] = b.docker_stats()
+    report["disk_bytes"] = {
+        "data/index/bm25": b.dir_size(Path("data/index/bm25")),
+        "data/index/emb": b.dir_size(Path("data/index/emb")),
+        "data/index/rerank_scores.sqlite": b.dir_size(Path("data/index"))
+        - b.dir_size(Path("data/index/bm25"))
+        - b.dir_size(Path("data/index/emb")),
+        "qdrant_storage": b.docker_du("docseek-qdrant-1", "/qdrant/storage"),
+        "neo4j_data": b.docker_du("docseek-neo4j-1", "/data"),
+        "data/processed": b.dir_size(Path("data/processed")),
+    }
+    write_json(run / "report.json", report)
+    write_json(
+        run / "env.json", environment_info(command="docseek bench", configs=names, reps=reps)
+    )
+    console.print(json.dumps(report.get("vector_sweep", {}), indent=1)[:3000], highlight=False)
+    console.print(f"-> {run}")
+
+
 @app.command("project")
 def project_cmd(
     out: Annotated[Path, typer.Option(help="Output directory.")] = Path("data/projected"),

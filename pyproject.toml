@@ -111,7 +111,7 @@ override-dependencies = ["onnxruntime>=1.20; sys_platform != 'win32'"]
 # PDF/OCR/vision libraries ship without (complete) type hints. Strict typing is required for
 # core/, eval/, lexical/, hybrid/ (PROJECT_SPEC §7); these wrappers may call untyped code.
 [[tool.mypy.overrides]]
-module = ["markdown", "pytesseract", "rapidocr_onnxruntime", "rapidocr_onnxruntime.*", "pymupdf", "fitz"]
+module = ["psutil", "markdown", "pytesseract", "rapidocr_onnxruntime", "rapidocr_onnxruntime.*", "pymupdf", "fitz"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
