@@ -11,7 +11,8 @@
 | M4 Hybrid + rerank | `m4-hybrid` | done (golden_v2: +1,512 judge labels, unreviewed) |
 | M5 Query understanding | `m5-query` | done |
 | M6 Graph + FS | `m6-graph-fs` | done |
-| M7 OCR + multimodal | `m7-multimodal` | next |
+| M7 OCR + multimodal | `m7-multimodal` | done |
+| M8 Agent + API + bench | `v1.0.0` | next |
 
 ## Modules and CLI
 
@@ -46,6 +47,14 @@
 - `ingest/projection.py` + `docseek project` → `data/projected/`; `fs/tools.py` (FsTools:
   ls/find/grep/cat, sandbox + ACL + limits + trace).
 - `core/filtering.py`: `matches_filter(metadata, MetadataFilter)`.
+- M7: `data/make_scans.py` (`docseek data make-scans` → `data/scans/`), `ingest/pdf_parser.py`
+  (text layer ≥ 20 chars else OCR), `ingest/ocr.py` (Tesseract, RapidOCR + English rec model
+  from HF, vision LLM), `eval/ocr_metrics.py` (CER/WER/table cells), `scripts/m7_ocr_bench.py`.
+  `ingest/images.py` + `docseek data images` (captions via `llm.vision`, Tesseract OCR →
+  `chunks_section_ctx_images.jsonl`, `chunks_images.jsonl`, `images.jsonl`);
+  `dense/image_retriever.py` (type `clip`, Qdrant named vector `image`). `ingest/scans.py` +
+  `docseek data scan-chunks` (→ `*_scans.jsonl`, `scan_map.json`, `golden_v1_scans.jsonl`,
+  `golden_m7.jsonl`). Runner type `subset` (modality). Classifier rules for image/scan.
 - `testing/acl_checks.py`: `probe_leaks()` — use for every new retriever/tool test.
 - `eval/grid.py` + `docseek eval grid --config X --param retriever.k1=0.9,1.2 ...` (dev only).
 - `docseek index --config X`, `docseek search "q" --config X --principal P --k N`.
@@ -76,6 +85,12 @@
 
 - M6 `configs/experiments/hybrid_graph_w.yaml` (fresh_ctx + graph 0.2, ≥2 entities): test
   nDCG@10 0.707, multihop R@10 0.667 = fresh_ctx; graph not adopted as a default retriever.
+
+- M7 OCR: Tesseract CER 0.032 / RapidOCR 0.098 / vision 0.121 (0.014 on non-refused pages;
+  5/46 pages refused by Gemini's recitation filter); tables: vision 0.817 best. Image queries
+  (test): caption + OCR 0.869, CLIP 0.393, text-only 0.386. Overall M7 test (169 q):
+  fresh_ctx on text+image+scan chunks 0.716, router 0.713; Leakage 0
+  (`experiments/20261019T010714Z_m7_overall_fresh_test`).
 
 ## Default decisions taken (no ADR needed)
 
@@ -110,6 +125,14 @@
 - M6: concept pruning = stoplist + not an API name + df ≤ 5% of sections.
 - M6: one-word API names link only with exact casing; FS hides restricted files as missing.
 - M6: CI has an `integration` job (Neo4j + Qdrant service containers).
+
+- M7: vision role moved to `gemini-3.5-flash-lite` (3.1-flash-lite daily quota used up).
+- M7: scan unit = one chunk per page; scanned originals removed in the variant corpus; golden
+  relevance remapped to pages (derived files; golden_v1 never edited).
+- M7: default stays fresh_ctx over one index holding text, image and scan chunks; router
+  image/scan routes measured, not adopted.
+- Docker Desktop may be stopped after the laptop sleeps/reboots: start it, then
+  `docker compose up -d qdrant` (and neo4j).
 
 ## Open items
 
