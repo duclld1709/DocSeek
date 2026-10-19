@@ -1,0 +1,25 @@
+# Production wiring for the API, UI, answer eval and `docseek bench` (M8).
+# Retriever entries are experiment YAMLs (their `retriever:` block is used) or inline blocks.
+# Defaults = the configs chosen on dev in M2-M7 (docs/progress.md).
+chunks_file: data/processed/chunks_section_ctx_images_scans.jsonl  # text + images + scans (M7)
+projected_dir: data/projected  # FS tools; omit or missing dir = no FS tools
+search_modes:
+  auto: configs/experiments/fresh_ctx.yaml  # M5/M7 default
+  bm25: configs/experiments/bm25f.yaml
+  dense: configs/experiments/dense_bge_small.yaml
+  hybrid: configs/experiments/hybrid_ctx.yaml
+one_shot: configs/experiments/rerank_fresh_ctx.yaml  # (a) one-shot RAG: hybrid + freshness + rerank
+image:  # image chunks only, caption + OCR text (best on test in M7)
+  type: subset
+  modality: [image]
+  inner:
+    type: hybrid
+    method: weighted
+    norm: minmax
+    alpha: 0.3
+    depth: 50
+    children:
+      bm25: { type: bm25, k1: 1.5, b: 0.5, fields: { body: 1.0 } }
+      dense: { type: dense, model: BAAI/bge-small-en-v1.5 }
+graph: true  # needs Neo4j with `docseek graph build`; unavailable = tool disabled
+agent: { max_steps: 6, timeout_s: 90, budget_usd: 0.05, k: 5 }
