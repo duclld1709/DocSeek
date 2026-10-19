@@ -138,13 +138,17 @@ class GraphRetriever:
             self._first_chunk.setdefault(c.section_id, c)
 
     def search(self, query: Query, k: int) -> list[ScoredHit]:
+        return self.search_templates(query, k, self._templates)
+
+    def search_templates(self, query: Query, k: int, templates: Sequence[str]) -> list[ScoredHit]:
+        """Like ``search`` with only these fixed templates (the agent's ``graph_search``)."""
         groups = sorted(self._policy.groups(query.principal))  # unknown principal raises
         names = self._linker.link(query.text)
         if len(names) < max(1, self._min_entities):
             return []  # e.g. min_entities=2: only multi-entity (multi-hop style) queries
         score: defaultdict[str, float] = defaultdict(float)
         via: defaultdict[str, dict[str, list[str]]] = defaultdict(dict)
-        for t in self._templates:
+        for t in templates:
             params = {"names": names, "groups": groups, "limit": self._per_template}
             for row in self._run(TEMPLATES[t], params):
                 sid = row["section_id"]
