@@ -8,6 +8,8 @@ authors = [
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "bm25s>=0.3.13",
+    "deepeval>=4.0.9",
+    "fastapi>=0.146.0",
     "fastembed>=0.9.0",
     "litellm>=1.106.0",
     "markdown>=3.11.1",
@@ -15,6 +17,7 @@ dependencies = [
     "numpy>=2.5.4",
     "onnxruntime-directml>=1.20 ; sys_platform == 'win32'",
     "pillow>=12.3.0",
+    "psutil>=7.2.2",
     "py-rust-stemmers>=0.1.8",
     "pydantic>=2.14.1",
     "pydantic-settings>=2.16.0",
@@ -24,11 +27,13 @@ dependencies = [
     "qdrant-client>=1.19.1",
     "rapidfuzz>=3.14.6",
     "rapidocr-onnxruntime>=1.4.4",
-    "rich>=15.0.0",
+    "rich>=14.0.0",
+    "streamlit>=1.66.0",
     "structlog>=26.1.0",
     "tenacity>=9",
     "tokenizers>=0.23.3",
     "typer>=0.27.3",
+    "uvicorn>=0.54.0",
 ]
 
 [project.scripts]
