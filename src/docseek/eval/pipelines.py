@@ -11,6 +11,8 @@ Types:
 - ``expand``: {inner, mode: rewrite|hyde|decompose, n, depth}
 - ``filtered``: {inner} — LLM-extracted MetadataFilter with empty-result fallback
 - ``router``: {routes: {qtype: cfg}, default: cfg, use_llm}
+- ``subset``: {modality: [..], inner} — inner built on the chunks of those modalities only
+  (M7: the router's image route searches image chunks only)
 """
 
 from __future__ import annotations
@@ -173,9 +175,24 @@ def build_router(
     )
 
 
+def build_subset(
+    opts: dict[str, Any],
+    chunks: list[Chunk],
+    golden: list[GoldenQuery],
+    policy: AccessPolicy,
+    seed: int,
+) -> Retriever:
+    keep = set(opts["modality"])
+    subset = [c for c in chunks if c.metadata.get("modality", "text") in keep]
+    if not subset:
+        raise ValueError(f"subset: no chunks with modality in {sorted(keep)}")
+    return _inner(opts, subset, golden, policy, seed)
+
+
 BUILDERS = {
     "freshness": build_freshness,
     "expand": build_expand,
     "filtered": build_filtered,
     "router": build_router,
+    "subset": build_subset,
 }

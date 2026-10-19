@@ -1,0 +1,23 @@
+# M7 image strategy 3 (weighted): min-max fusion of CLIP (weight alpha) and caption + OCR,
+# image chunks only; alpha tuned on dev ({0.1, 0.2, 0.3}).
+name: img_fusion_w
+golden: data/golden/golden_multimodal.jsonl
+qtypes: [image]
+chunks_file: chunks_images.jsonl
+retriever:
+  type: hybrid
+  method: weighted
+  norm: minmax
+  alpha: 0.3
+  depth: 50
+  children:
+    clip: { type: clip }
+    caption:
+      type: hybrid
+      method: weighted
+      norm: minmax
+      alpha: 0.3
+      depth: 50
+      children:
+        bm25: { type: bm25, k1: 1.5, b: 0.5, fields: { body: 1.0 } }
+        dense: { type: dense, model: BAAI/bge-small-en-v1.5 }

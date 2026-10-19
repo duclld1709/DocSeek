@@ -1,4 +1,4 @@
-# M7 overall with the router: rule cues send image queries to fresh_ctx RRF CLIP (img_all),
+# M7 overall with the router: rule cues send image queries to img_fusion_w (image chunks only),
 # scan queries to fresh_ctx (hybrid over a corpus that holds the scan pages); no LLM.
 name: m7_overall_router
 golden: data/golden/golden_m7.jsonl
@@ -6,29 +6,41 @@ chunks_file: chunks_section_ctx_images_scans.jsonl
 retriever:
   type: router
   use_llm: false
-  routes:
-    image:
+  default: &fresh
+    type: freshness
+    beta: 0.0
+    tau_days: 180
+    deprecated_penalty: 0.0
+    superseded_penalty: 0.5
+    depth: 50
+    inner:
       type: hybrid
-      method: rrf
-      rrf_k: 60
+      method: weighted
+      norm: minmax
+      alpha: 0.3
       depth: 50
       children:
-        clip: { type: clip }
-        text: &fresh
-          type: freshness
-          beta: 0.0
-          tau_days: 180
-          deprecated_penalty: 0.0
-          superseded_penalty: 0.5
-          depth: 50
-          inner:
+        bm25: { type: bm25, k1: 1.5, b: 0.5, fields: { title: 2.0, section_path: 0.5, body: 1.0, code: 0.5 } }
+        dense: { type: dense, model: BAAI/bge-small-en-v1.5 }
+  routes:
+    image:  # img_fusion_w (CLIP 0.3 + caption/OCR 0.7) over image chunks only
+      type: subset
+      modality: [image]
+      inner:
+        type: hybrid
+        method: weighted
+        norm: minmax
+        alpha: 0.3
+        depth: 50
+        children:
+          clip: { type: clip }
+          caption:
             type: hybrid
             method: weighted
             norm: minmax
             alpha: 0.3
             depth: 50
             children:
-              bm25: { type: bm25, k1: 1.5, b: 0.5, fields: { title: 2.0, section_path: 0.5, body: 1.0, code: 0.5 } }
+              bm25: { type: bm25, k1: 1.5, b: 0.5, fields: { body: 1.0 } }
               dense: { type: dense, model: BAAI/bge-small-en-v1.5 }
     scan: *fresh
-  default: *fresh

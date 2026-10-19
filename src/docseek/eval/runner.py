@@ -291,7 +291,7 @@ RETRIEVERS: dict[str, RetrieverFactory] = {
     "qdrant_hybrid": _qdrant_hybrid,
     "graph": _graph,
     "clip": _clip,
-    **{kind: _pipeline(kind) for kind in ("freshness", "expand", "filtered", "router")},
+    **{kind: _pipeline(kind) for kind in ("freshness", "expand", "filtered", "router", "subset")},
 }
 
 

@@ -74,6 +74,9 @@ def main() -> None:
                         "cer": cer(gt, text),
                         "wer": wer(gt, text),
                         "seconds": secs,
+                        # Empty output = the engine returned nothing (for Gemini: the
+                        # recitation content filter on public docs text).
+                        "empty": not text.strip(),
                     }
                 )
                 done += 1
@@ -99,6 +102,7 @@ def main() -> None:
             return statistics.mean(r[field] for r in subset) if subset else float("nan")
 
         one, two = [r for r in rs if not r["two_columns"]], [r for r in rs if r["two_columns"]]
+        answered = [r for r in rs if not r["empty"]]
         correct = total = 0
         per_table: dict[str, float] = {}
         for scan in manifest["scans"]:
@@ -119,6 +123,9 @@ def main() -> None:
             "cer_one_column": mean("cer", one),
             "cer_two_columns": mean("cer", two),
             "wer_two_columns": mean("wer", two),
+            "empty_pages": len(rs) - len(answered),
+            "cer_non_empty": mean("cer", answered),
+            "wer_non_empty": mean("wer", answered),
             "seconds_per_page": mean("seconds", rs),
             "usd_per_page_list_price": cost / n if n else 0.0,
             "usd_charged_total": vision_cost if key == "vision" else 0.0,
