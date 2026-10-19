@@ -54,6 +54,22 @@ def select_queries(golden: list[GoldenQuery], seed: int) -> list[GoldenQuery]:
     return out
 
 
+def answer_with_retry(rt: Any, mode: str, q: GoldenQuery, llm: Any, model: str) -> Any:
+    """Per-minute free-tier limits (Gemma: 16k input tokens/min) are waited out; a daily quota
+    error is not retried. Calls made before the error are cached, so a retry is cheap."""
+    for attempt in range(6):
+        try:
+            return rt.answer(mode, q.text, q.principal, llm, model)
+        except Exception as exc:
+            msg = str(exc)
+            per_minute = ("429" in msg or "RESOURCE_EXHAUSTED" in msg) and "PerDay" not in msg
+            if not per_minute or attempt == 5:
+                raise
+            print(f"    rate limited ({q.qid}), waiting 65 s", flush=True)
+            time.sleep(65)
+    raise AssertionError("unreachable")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--modes", nargs="+", default=list(ANSWER_MODES))
@@ -87,7 +103,7 @@ def main() -> None:
             for q in queries:
                 with trace_scope() as tid:
                     t = time.perf_counter()
-                    res = rt.answer(mode, q.text, q.principal, llm, model)
+                    res = answer_with_retry(rt, mode, q, llm, model)
                     wall = (time.perf_counter() - t) * 1000
                 cited = res.citations or res.retrieved[:5]
                 contexts = []
