@@ -115,5 +115,5 @@ module = ["markdown", "pytesseract", "rapidocr_onnxruntime", "rapidocr_onnxrunti
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["docseek.data.make_scans", "docseek.ingest.pdf_parser", "docseek.ingest.ocr", "docseek.multimodal.*"]
+module = ["docseek.data.make_scans", "docseek.ingest.pdf_parser", "docseek.ingest.ocr", "docseek.multimodal.*", "docseek.ui.*"]
 disallow_untyped_calls = false

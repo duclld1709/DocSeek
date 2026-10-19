@@ -228,6 +228,27 @@ def create_app(
         data["trace_id"] = tid
         return AskResponse(**data, principal=principal)
 
+    @app.get("/sections/{section_id:path}")
+    def section(
+        section_id: str,
+        rt: Annotated[Runtime, Depends(runtime)],
+        x_principal: Annotated[str | None, Header()] = None,
+    ) -> dict[str, Any]:
+        """Source text of a cited section (hidden and missing sections both give 404)."""
+        principal = principal_of(None, x_principal, rt)
+        tools = rt.toolbox(principal, use_fs=False)
+        if not tools.can_read(section_id):
+            raise HTTPException(404, "section not found")
+        sec = tools.read_section(section_id)
+        meta = rt.backend.sections[section_id][0].metadata
+        return {
+            **sec,
+            "modality": meta.get("modality", "text"),
+            "image_path": meta.get("image_path"),
+            "page": meta.get("page"),
+            "file": meta.get("file"),
+        }
+
     @app.get("/traces/{trace_id}")
     def traces(
         trace_id: str,

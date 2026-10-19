@@ -1,6 +1,7 @@
 """API with TestClient + ScriptedLLM on the mini corpus: ACL, principal header, traces."""
 
 from pathlib import Path
+from urllib.parse import quote
 
 import pytest
 from fastapi.testclient import TestClient
@@ -89,3 +90,13 @@ def test_ask_cites_retrieved_and_traces_are_private(tmp_path: Path) -> None:
     other = client.get(f"/traces/{data['trace_id']}", headers={"X-Principal": "security"})
     assert other.status_code == 404  # traces are private to their principal
     assert client.get("/traces/doesnotexist").status_code == 404
+
+
+def test_section_endpoint_hides_restricted(tmp_path: Path) -> None:
+    client = _client(tmp_path, [])
+    secret = next(s for s, acl in ACL.items() if acl == ["security-team"])
+    url = "/sections/" + quote(secret, safe="")  # '#' in ids must be URL-encoded
+    assert client.get(url).status_code == 404
+    assert client.get("/sections/" + quote("x:y.md#z", safe="")).status_code == 404
+    ok = client.get(url, headers={"X-Principal": "security"})
+    assert ok.status_code == 200 and ok.json()["section_id"] == secret
